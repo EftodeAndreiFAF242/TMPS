@@ -1,3 +1,6 @@
+// test_domain.cpp
+// Unit tests for the domain layer: Status, Report, GeoPoint and DeadlineCalculator.
+
 #include "domain/DeadlineCalculator.hpp"
 #include "domain/GeoPoint.hpp"
 #include "domain/Report.hpp"
@@ -9,6 +12,7 @@
 #include <chrono>
 #include <limits>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
@@ -104,20 +108,20 @@ TEST_SUITE("GeoPoint") {
         CHECK(kMoldova.contains(kChisinau));
         CHECK(kMoldova.contains({.latitude = kMoldova.south, .longitude = kMoldova.west}));
         CHECK_FALSE(kMoldova.contains(kBucharest));
-        CHECK_FALSE(kMoldova.contains({.latitude = std::numeric_limits<double>::quiet_NaN(), .longitude = 28.0}));
+        CHECK_FALSE(kMoldova.contains({.latitude = numeric_limits<double>::quiet_NaN(), .longitude = 28.0}));
     }
 }
 
 TEST_SUITE("DeadlineCalculator") {
-    using std::chrono::days;
-    using std::chrono::sys_days;
+    using chrono::days;
+    using chrono::sys_days;
 
     TEST_CASE("the due date is 30 calendar days after the day of the report") {
         const DeadlineCalculator deadlines;
         // Reported late in the evening: the hour must not push the deadline a day further.
         const Report report{"R-0001", Category::Pothole, "", kChisinau, at(2026, 10, 1, 23)};
 
-        CHECK(deadlines.dueDate(report) == std::chrono::floor<days>(at(2026, 10, 31)));
+        CHECK(deadlines.dueDate(report) == chrono::floor<days>(at(2026, 10, 31)));
     }
 
     TEST_CASE("days left count down to zero on the due date and go negative after it") {

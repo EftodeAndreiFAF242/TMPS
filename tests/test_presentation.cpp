@@ -1,3 +1,6 @@
+// test_presentation.cpp
+// Unit tests for ReportFormatter.
+
 #include "presentation/ReportFormatter.hpp"
 #include "support/Fakes.hpp"
 
@@ -6,12 +9,13 @@
 #include <chrono>
 #include <string>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
 TEST_SUITE("ReportFormatter") {
     TEST_CASE("formatDate pads the month and the day") {
-        CHECK(formatDate(std::chrono::floor<std::chrono::days>(at(2026, 3, 7))) == "2026-03-07");
+        CHECK(formatDate(chrono::floor<chrono::days>(at(2026, 3, 7))) == "2026-03-07");
     }
 
     TEST_CASE("the deadline is worded by how many days are left") {
@@ -37,7 +41,7 @@ TEST_SUITE("ReportFormatter") {
         const ReportFormatter formatter;
         const Report report{"R-0001", Category::Garbage, "Bags on the pavement", kChisinau, at(2026, 10, 1)};
 
-        const std::string line = formatter.summary(report, at(2026, 10, 1));
+        const string line = formatter.summary(report, at(2026, 10, 1));
 
         CHECK(line == "R-0001  Garbage       New          due 2026-10-31, 30 days left  Bags on the pavement");
     }

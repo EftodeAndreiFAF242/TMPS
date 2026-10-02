@@ -1,3 +1,6 @@
+// ReportFormatter.hpp
+// Turns a report into text for a person to read (SRP).
+
 #pragma once
 
 #include "domain/DeadlineCalculator.hpp"
@@ -7,10 +10,12 @@
 #include <chrono>
 #include <string>
 
+using namespace std;
+
 namespace civicdesk {
 
 /// A calendar day written as YYYY-MM-DD.
-[[nodiscard]] std::string formatDate(std::chrono::sys_days day);
+[[nodiscard]] string formatDate(chrono::sys_days day);
 
 /// Turns a report into text for a person to read.
 ///
@@ -21,10 +26,10 @@ public:
     explicit ReportFormatter(DeadlineCalculator deadlines = DeadlineCalculator{}) noexcept : deadlines_{deadlines} {}
 
     /// One line with the id, the category, the status, the deadline and the description.
-    [[nodiscard]] std::string summary(const Report& report, TimePoint now) const;
+    [[nodiscard]] string summary(const Report& report, TimePoint now) const;
 
     /// The deadline in words: "due 2026-10-31, 12 days left", or "closed" for a closed report.
-    [[nodiscard]] std::string deadline(const Report& report, TimePoint now) const;
+    [[nodiscard]] string deadline(const Report& report, TimePoint now) const;
 
 private:
     DeadlineCalculator deadlines_;

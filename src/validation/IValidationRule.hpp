@@ -1,3 +1,6 @@
+// IValidationRule.hpp
+// The interface every validation rule implements. It is the extension point of validation (OCP).
+
 #pragma once
 
 #include "domain/Report.hpp"

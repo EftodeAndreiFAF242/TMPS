@@ -1,3 +1,6 @@
+// ServiceAreaRule.cpp
+// Implementation of the rule that keeps reports inside the service area.
+
 #include "validation/rules/ServiceAreaRule.hpp"
 
 namespace civicdesk {

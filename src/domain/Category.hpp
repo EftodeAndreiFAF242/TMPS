@@ -1,6 +1,11 @@
+// Category.hpp
+// The kinds of problems a citizen can report, and their names as text.
+
 #pragma once
 
 #include <string_view>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -15,7 +20,7 @@ enum class Category {
 };
 
 /// Human-readable name of a category.
-[[nodiscard]] constexpr std::string_view nameOf(Category category) noexcept {
+[[nodiscard]] constexpr string_view nameOf(Category category) noexcept {
     switch (category) {
         case Category::Pothole:     return "Pothole";
         case Category::StreetLight: return "Street light";

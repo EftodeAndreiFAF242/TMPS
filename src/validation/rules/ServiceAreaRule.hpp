@@ -1,3 +1,6 @@
+// ServiceAreaRule.hpp
+// Validation rule: the report has to be located inside the service area.
+
 #pragma once
 
 #include "domain/GeoPoint.hpp"

@@ -1,8 +1,13 @@
+// InMemoryReportRepository.hpp
+// Implementation of IReportRepository that keeps the reports in memory.
+
 #pragma once
 
 #include "application/ports/IReportRepository.hpp"
 
 #include <vector>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -11,11 +16,11 @@ namespace civicdesk {
 class InMemoryReportRepository final : public IReportRepository {
 public:
     void save(const Report& report) override;
-    [[nodiscard]] std::optional<Report> findById(const ReportId& id) const override;
-    [[nodiscard]] std::vector<Report> findAll(const IReportSpecification& specification) const override;
+    [[nodiscard]] optional<Report> findById(const ReportId& id) const override;
+    [[nodiscard]] vector<Report> findAll(const IReportSpecification& specification) const override;
 
 private:
-    std::vector<Report> reports_;
+    vector<Report> reports_;
 };
 
 }  // namespace civicdesk

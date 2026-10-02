@@ -1,3 +1,6 @@
+// Specifications.hpp
+// The search conditions available so far, and AllOf, which combines them.
+
 #pragma once
 
 #include "domain/Category.hpp"
@@ -7,6 +10,8 @@
 
 #include <memory>
 #include <vector>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -61,12 +66,12 @@ private:
 class AllOf final : public IReportSpecification {
 public:
     /// Adds one more condition. Returns the specification, so calls can be chained.
-    AllOf& add(std::unique_ptr<IReportSpecification> part);
+    AllOf& add(unique_ptr<IReportSpecification> part);
 
     [[nodiscard]] bool isSatisfiedBy(const Report& report) const override;
 
 private:
-    std::vector<std::unique_ptr<IReportSpecification>> parts_;
+    vector<unique_ptr<IReportSpecification>> parts_;
 };
 
 }  // namespace civicdesk

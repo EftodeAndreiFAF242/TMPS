@@ -1,3 +1,6 @@
+// IClock.hpp
+// Port: where the current time comes from. ReportService depends on this interface, not on the system clock (DIP).
+
 #pragma once
 
 #include "domain/Types.hpp"

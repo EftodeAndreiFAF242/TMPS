@@ -1,3 +1,6 @@
+// GeoPoint.hpp
+// A point on the map, the distance between two points, and the area where reports are accepted.
+
 #pragma once
 
 namespace civicdesk {

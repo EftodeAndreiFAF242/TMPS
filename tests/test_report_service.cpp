@@ -1,3 +1,6 @@
+// test_report_service.cpp
+// Unit tests for ReportService, wired with test doubles in place of the real clock and notifier (DIP).
+
 #include "application/ReportService.hpp"
 #include "infrastructure/InMemoryReportRepository.hpp"
 #include "infrastructure/SequentialIdGenerator.hpp"
@@ -11,6 +14,7 @@
 #include <optional>
 #include <vector>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
@@ -26,7 +30,7 @@ struct ServiceFixture {
     SequentialIdGenerator ids{"T"};
     ReportService service{repository, notifier, validator, clock, ids};
 
-    ServiceFixture() { validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova)); }
+    ServiceFixture() { validator.addRule(make_unique<ServiceAreaRule>(kMoldova)); }
 
     /// Submits a valid draft and returns the id of the new report.
     ReportId submitValid(const ReportDraft& draft = potholeDraft()) {
@@ -49,7 +53,7 @@ TEST_SUITE("ReportService::submit") {
         CHECK(result.report->category() == Category::Pothole);
         CHECK(result.report->description() == "Pothole on the main street");
 
-        const std::optional<Report> stored = repository.findById("T-0001");
+        const optional<Report> stored = repository.findById("T-0001");
         REQUIRE(stored.has_value());
         CHECK(stored->description() == "Pothole on the main street");
     }
@@ -162,7 +166,7 @@ TEST_SUITE("ReportService queries") {
         const ReportId second = submitValid();
         service.changeStatus(first, Status::Resolved);
 
-        const std::vector<Report> open = service.search(IsOpen{});
+        const vector<Report> open = service.search(IsOpen{});
 
         REQUIRE(open.size() == 1);
         CHECK(open.front().id() == second);
@@ -179,7 +183,7 @@ TEST_SUITE("ReportService queries") {
         submitValid(ReportDraft{.category = Category::Garbage, .description = "Bags", .location = near});
 
         SUBCASE("only the open pothole within 25 m counts") {
-            const std::vector<Report> duplicates = service.possibleDuplicates(potholeDraft(kChisinau));
+            const vector<Report> duplicates = service.possibleDuplicates(potholeDraft(kChisinau));
 
             REQUIRE(duplicates.size() == 1);
             CHECK(duplicates.front().id() == nearPothole);

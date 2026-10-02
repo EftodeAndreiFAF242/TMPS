@@ -1,3 +1,6 @@
+// IIdGenerator.hpp
+// Port: where the ids of new reports come from. ReportService depends on this interface, not on a counter (DIP).
+
 #pragma once
 
 #include "domain/Types.hpp"

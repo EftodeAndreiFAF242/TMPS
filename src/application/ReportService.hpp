@@ -1,3 +1,6 @@
+// ReportService.hpp
+// The use cases of the system: submit a report, change its status, search (SRP, DIP).
+
 #pragma once
 
 #include "application/ports/IClock.hpp"
@@ -16,24 +19,26 @@
 #include <string_view>
 #include <vector>
 
+using namespace std;
+
 namespace civicdesk {
 
 /// Thrown when no report has the requested id.
-class ReportNotFound : public std::runtime_error {
+class ReportNotFound : public runtime_error {
 public:
     explicit ReportNotFound(const ReportId& id);
 };
 
 /// Thrown when a report is rejected without telling the citizen why.
-class RejectionReasonRequired : public std::invalid_argument {
+class RejectionReasonRequired : public invalid_argument {
 public:
     RejectionReasonRequired();
 };
 
 /// The outcome of submitting a draft: the stored report, or the reasons it was refused.
 struct SubmissionResult {
-    std::optional<Report> report;
-    std::vector<std::string> errors;
+    optional<Report> report;
+    vector<string> errors;
 
     [[nodiscard]] bool accepted() const noexcept { return report.has_value(); }
 };
@@ -69,16 +74,16 @@ public:
     /// @throws ReportNotFound           if no report has this id
     /// @throws RejectionReasonRequired  if the report is rejected without a note
     /// @throws InvalidStatusTransition  if the lifecycle doesn't allow the move
-    Report changeStatus(const ReportId& id, Status next, std::string_view note = {});
+    Report changeStatus(const ReportId& id, Status next, string_view note = {});
 
-    [[nodiscard]] std::optional<Report> findById(const ReportId& id) const;
+    [[nodiscard]] optional<Report> findById(const ReportId& id) const;
 
     /// Every report that satisfies the specification, oldest first.
-    [[nodiscard]] std::vector<Report> search(const IReportSpecification& specification) const;
+    [[nodiscard]] vector<Report> search(const IReportSpecification& specification) const;
 
     /// Open reports of the same category located next to the draft. The citizen can then
     /// join an existing report instead of sending the same problem a second time.
-    [[nodiscard]] std::vector<Report> possibleDuplicates(const ReportDraft& draft) const;
+    [[nodiscard]] vector<Report> possibleDuplicates(const ReportDraft& draft) const;
 
 private:
     IReportRepository& repository_;

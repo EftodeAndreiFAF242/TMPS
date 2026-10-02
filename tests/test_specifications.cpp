@@ -1,3 +1,6 @@
+// test_specifications.cpp
+// Unit tests for the search conditions.
+
 #include "specification/Specifications.hpp"
 #include "support/Fakes.hpp"
 
@@ -6,6 +9,7 @@
 #include <memory>
 #include <stdexcept>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
@@ -53,11 +57,11 @@ TEST_SUITE("specifications") {
         const Report openPothole = makeReport("R-0001", Category::Pothole);
 
         AllOf openPotholes;
-        openPotholes.add(std::make_unique<HasCategory>(Category::Pothole)).add(std::make_unique<IsOpen>());
+        openPotholes.add(make_unique<HasCategory>(Category::Pothole)).add(make_unique<IsOpen>());
         CHECK(openPotholes.isSatisfiedBy(openPothole));
 
         AllOf openGarbage;
-        openGarbage.add(std::make_unique<HasCategory>(Category::Garbage)).add(std::make_unique<IsOpen>());
+        openGarbage.add(make_unique<HasCategory>(Category::Garbage)).add(make_unique<IsOpen>());
         CHECK_FALSE(openGarbage.isSatisfiedBy(openPothole));
     }
 
@@ -68,6 +72,6 @@ TEST_SUITE("specifications") {
     TEST_CASE("AllOf refuses a null part") {
         AllOf specification;
 
-        CHECK_THROWS_AS(specification.add(nullptr), std::invalid_argument);
+        CHECK_THROWS_AS(specification.add(nullptr), invalid_argument);
     }
 }

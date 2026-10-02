@@ -79,6 +79,9 @@ third_party/doctest/    the test framework
 Dependencies point one way: `infrastructure` and `presentation` know `application` and
 `domain`, and never the other way round.
 
+Every source file starts with a comment that says what it holds. The files use
+`using namespace std;`, so standard library names are written without the `std::` prefix.
+
 ---
 
 ## Laboratory work 1 — SOLID principles
@@ -105,7 +108,7 @@ class ReportManager {
     void changeStatus(...);    // checks the lifecycle, updates, prints
     int  daysLeft(...);        // knows the legal term
     void printAll();           // knows the layout of the table
-    std::vector<Report> reports_;
+    vector<Report> reports_;
 };
 ```
 
@@ -132,7 +135,7 @@ lifecycle, and it has no `validate()`, no `save()` and no `print()`
 ```cpp
 class Report {
 public:
-    Report(ReportId id, Category category, std::string description, GeoPoint location, TimePoint createdAt);
+    Report(ReportId id, Category category, string description, GeoPoint location, TimePoint createdAt);
 
     [[nodiscard]] Status status() const noexcept { return status_; }
     [[nodiscard]] bool isOpen() const noexcept { return !isClosed(status_); }
@@ -150,16 +153,20 @@ step is one call to the class that owns it
 
 ```cpp
 SubmissionResult ReportService::submit(const ReportDraft& draft) {
+    // Step 1: check the draft. An invalid draft stops here, before an id is taken.
     const ValidationResult validation = validator_.validate(draft);
     if (!validation.ok()) {
-        return SubmissionResult{.report = std::nullopt, .errors = validation.errors()};
+        return SubmissionResult{.report = nullopt, .errors = validation.errors()};
     }
 
+    // Step 2: turn the draft into a report, with a fresh id and the current time.
     Report report{ids_.next(), draft.category, draft.description, draft.location, clock_.now()};
+
+    // Step 3: store it, then announce it.
     repository_.save(report);
     notifier_.reportSubmitted(report);
 
-    return SubmissionResult{.report = std::move(report), .errors = {}};
+    return SubmissionResult{.report = move(report), .errors = {}};
 }
 ```
 
@@ -193,6 +200,8 @@ and its whole logic is a loop over whatever rules it was given
 ```cpp
 ValidationResult ReportValidator::validate(const ReportDraft& draft) const {
     ValidationResult result;
+    // OCP: the loop never asks which rule it is running. Any class that implements
+    // IValidationRule works here, including the ones written after this file.
     for (const auto& rule : rules_) {
         rule->check(draft, result);
     }
@@ -211,7 +220,7 @@ validator runs it like any other rule:
 ```cpp
 TEST_CASE("a rule the validator has never heard of plugs in without changing it (OCP)") {
     ReportValidator validator;
-    validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova)).addRule(std::make_unique<NoShoutingRule>());
+    validator.addRule(make_unique<ServiceAreaRule>(kMoldova)).addRule(make_unique<NoShoutingRule>());
 
     ReportDraft draft = potholeDraft();
     CHECK(validator.validate(draft).ok());
@@ -237,7 +246,7 @@ public:
 };
 
 // in IReportRepository:
-[[nodiscard]] virtual std::vector<Report> findAll(const IReportSpecification& specification) const = 0;
+[[nodiscard]] virtual vector<Report> findAll(const IReportSpecification& specification) const = 0;
 ```
 
 The conditions written so far are `AnyReport`, `HasCategory`, `HasStatus`, `IsOpen` and
@@ -246,11 +255,13 @@ is a new feature built only by combining existing parts, with no change to the r
 ([src/application/ReportService.cpp](src/application/ReportService.cpp)):
 
 ```cpp
-std::vector<Report> ReportService::possibleDuplicates(const ReportDraft& draft) const {
+vector<Report> ReportService::possibleDuplicates(const ReportDraft& draft) const {
+    // OCP: a new kind of search built only by combining existing conditions. The
+    // repository was not changed for it.
     AllOf sameProblemNearby;
-    sameProblemNearby.add(std::make_unique<HasCategory>(draft.category))
-        .add(std::make_unique<IsOpen>())
-        .add(std::make_unique<WithinRadius>(draft.location, kDuplicateRadiusMeters));
+    sameProblemNearby.add(make_unique<HasCategory>(draft.category))
+        .add(make_unique<IsOpen>())
+        .add(make_unique<WithinRadius>(draft.location, kDuplicateRadiusMeters));
 
     return repository_.findAll(sameProblemNearby);
 }
@@ -264,7 +275,7 @@ std::vector<Report> ReportService::possibleDuplicates(const ReportDraft& draft) 
 `ReportService` is the high-level policy of the program: what happens when a report is
 submitted or its status changes. Storage, console output, the system clock and the way
 ids are made are low-level details. Written the direct way, the service would create an
-`InMemoryReportRepository`, write to `std::cout` and call `system_clock::now()` itself,
+`InMemoryReportRepository`, write to `cout` and call `system_clock::now()` itself,
 and it could not be used or tested without them.
 
 The dependency is inverted with four interfaces that belong to the application layer
@@ -314,7 +325,7 @@ The concrete classes are named in exactly one place, the composition root
 
 ```cpp
 InMemoryReportRepository repository;
-ConsoleNotifier notifier{std::cout};
+ConsoleNotifier notifier{cout};
 SystemClock clock;
 SequentialIdGenerator ids{"R"};
 ReportService service{repository, notifier, validator, clock, ids};
@@ -333,7 +344,7 @@ struct ServiceFixture {
     SequentialIdGenerator ids{"T"};
     ReportService service{repository, notifier, validator, clock, ids};
 
-    ServiceFixture() { validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova)); }
+    ServiceFixture() { validator.addRule(make_unique<ServiceAreaRule>(kMoldova)); }
     // ...
 };
 ```

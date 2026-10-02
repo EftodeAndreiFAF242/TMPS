@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+using namespace std;
+
 namespace civicdesk::testing {
 
 /// A point in the centre of Chisinau, inside the service area.
@@ -27,8 +29,8 @@ inline constexpr GeoPoint kBucharest{.latitude = 44.4268, .longitude = 26.1025};
 
 /// The given calendar day (UTC) at the given hour.
 inline TimePoint at(int year, unsigned month, unsigned day, int hour = 12) {
-    using namespace std::chrono;
-    return sys_days{std::chrono::year{year} / std::chrono::month{month} / std::chrono::day{day}} + hours{hour};
+    using namespace chrono;
+    return sys_days{chrono::year{year} / chrono::month{month} / chrono::day{day}} + hours{hour};
 }
 
 /// A valid draft, for tests that don't care about its contents.
@@ -38,7 +40,7 @@ inline ReportDraft potholeDraft(GeoPoint location = kChisinau) {
 
 /// A report with the given id, created on 1 October 2026.
 inline Report makeReport(ReportId id = "R-0001", Category category = Category::Pothole, GeoPoint location = kChisinau) {
-    return Report{std::move(id), category, "A problem", location, at(2026, 10, 1)};
+    return Report{move(id), category, "A problem", location, at(2026, 10, 1)};
 }
 
 /// A clock that shows whatever time the test sets.
@@ -60,17 +62,17 @@ public:
         ReportId id;
         Status previous;
         Status current;
-        std::string note;
+        string note;
     };
 
     void reportSubmitted(const Report& report) override { submitted.push_back(report.id()); }
 
-    void statusChanged(const Report& report, Status previous, std::string_view note) override {
-        changes.push_back(StatusChange{report.id(), previous, report.status(), std::string{note}});
+    void statusChanged(const Report& report, Status previous, string_view note) override {
+        changes.push_back(StatusChange{report.id(), previous, report.status(), string{note}});
     }
 
-    std::vector<ReportId> submitted;
-    std::vector<StatusChange> changes;
+    vector<ReportId> submitted;
+    vector<StatusChange> changes;
 };
 
 }  // namespace civicdesk::testing

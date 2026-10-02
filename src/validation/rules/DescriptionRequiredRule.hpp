@@ -1,3 +1,6 @@
+// DescriptionRequiredRule.hpp
+// Validation rule: reports of one given category must have a description.
+
 #pragma once
 
 #include "domain/Category.hpp"

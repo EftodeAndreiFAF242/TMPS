@@ -1,3 +1,6 @@
+// test_infrastructure.cpp
+// Unit tests for the implementations of the ports: the repository, the id generator and the console notifier.
+
 #include "infrastructure/ConsoleNotifier.hpp"
 #include "infrastructure/InMemoryReportRepository.hpp"
 #include "infrastructure/SequentialIdGenerator.hpp"
@@ -9,6 +12,7 @@
 #include <sstream>
 #include <vector>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
@@ -30,7 +34,7 @@ TEST_SUITE("InMemoryReportRepository") {
         updated.transitionTo(Status::InProgress);
         repository.save(updated);
 
-        const std::vector<Report> all = repository.findAll(AnyReport{});
+        const vector<Report> all = repository.findAll(AnyReport{});
         REQUIRE(all.size() == 2);
         CHECK(all[0].id() == "R-0001");
         CHECK(all[0].status() == Status::InProgress);
@@ -53,7 +57,7 @@ TEST_SUITE("InMemoryReportRepository") {
         repository.save(makeReport("R-0002", Category::Garbage));
         repository.save(makeReport("R-0003", Category::Pothole));
 
-        const std::vector<Report> potholes = repository.findAll(HasCategory{Category::Pothole});
+        const vector<Report> potholes = repository.findAll(HasCategory{Category::Pothole});
 
         REQUIRE(potholes.size() == 2);
         CHECK(potholes[0].id() == "R-0001");
@@ -78,7 +82,7 @@ TEST_SUITE("SequentialIdGenerator") {
 
 TEST_SUITE("ConsoleNotifier") {
     TEST_CASE("a submitted report is announced with its id and category") {
-        std::ostringstream out;
+        ostringstream out;
         ConsoleNotifier notifier{out};
 
         notifier.reportSubmitted(makeReport("R-0001", Category::StreetLight));
@@ -87,7 +91,7 @@ TEST_SUITE("ConsoleNotifier") {
     }
 
     TEST_CASE("a status change is announced with both statuses and the note") {
-        std::ostringstream out;
+        ostringstream out;
         ConsoleNotifier notifier{out};
         Report report = makeReport("R-0001");
         report.transitionTo(Status::InProgress);

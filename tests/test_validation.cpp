@@ -1,3 +1,6 @@
+// test_validation.cpp
+// Unit tests for the validation rules and for ReportValidator, including the proof of OCP.
+
 #include "support/Fakes.hpp"
 #include "validation/ReportValidator.hpp"
 #include "validation/rules/DescriptionLengthRule.hpp"
@@ -12,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 
+using namespace std;
 using namespace civicdesk;
 using namespace civicdesk::testing;
 
@@ -29,8 +33,8 @@ ValidationResult check(const IValidationRule& rule, const ReportDraft& draft) {
 class NoShoutingRule final : public IValidationRule {
 public:
     void check(const ReportDraft& draft, ValidationResult& result) const override {
-        const bool hasLetters = std::ranges::any_of(draft.description, [](unsigned char c) { return std::isalpha(c) != 0; });
-        const bool hasLowercase = std::ranges::any_of(draft.description, [](unsigned char c) { return std::islower(c) != 0; });
+        const bool hasLetters = ranges::any_of(draft.description, [](unsigned char c) { return isalpha(c) != 0; });
+        const bool hasLowercase = ranges::any_of(draft.description, [](unsigned char c) { return islower(c) != 0; });
         if (hasLetters && !hasLowercase) {
             result.addError("Please don't write the description in capital letters only.");
         }
@@ -54,10 +58,10 @@ TEST_SUITE("validation rules") {
         const DescriptionLengthRule rule{10};
         ReportDraft draft = potholeDraft();
 
-        draft.description = std::string(10, 'a');
+        draft.description = string(10, 'a');
         CHECK(check(rule, draft).ok());
 
-        draft.description = std::string(11, 'a');
+        draft.description = string(11, 'a');
         const ValidationResult tooLong = check(rule, draft);
         REQUIRE(tooLong.errors().size() == 1);
         CHECK(tooLong.errors().front() == "The description can have at most 10 characters.");
@@ -97,8 +101,8 @@ TEST_SUITE("ReportValidator") {
 
     TEST_CASE("a valid draft passes every rule") {
         ReportValidator validator;
-        validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova))
-            .addRule(std::make_unique<DescriptionLengthRule>(1000));
+        validator.addRule(make_unique<ServiceAreaRule>(kMoldova))
+            .addRule(make_unique<DescriptionLengthRule>(1000));
 
         CHECK(validator.ruleCount() == 2);
         CHECK(validator.validate(potholeDraft()).ok());
@@ -106,8 +110,8 @@ TEST_SUITE("ReportValidator") {
 
     TEST_CASE("every broken rule is reported, in the order the rules were added") {
         ReportValidator validator;
-        validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova))
-            .addRule(std::make_unique<DescriptionLengthRule>(5));
+        validator.addRule(make_unique<ServiceAreaRule>(kMoldova))
+            .addRule(make_unique<DescriptionLengthRule>(5));
 
         const ValidationResult result = validator.validate(potholeDraft(kBucharest));
 
@@ -118,7 +122,7 @@ TEST_SUITE("ReportValidator") {
 
     TEST_CASE("a rule the validator has never heard of plugs in without changing it (OCP)") {
         ReportValidator validator;
-        validator.addRule(std::make_unique<ServiceAreaRule>(kMoldova)).addRule(std::make_unique<NoShoutingRule>());
+        validator.addRule(make_unique<ServiceAreaRule>(kMoldova)).addRule(make_unique<NoShoutingRule>());
 
         ReportDraft draft = potholeDraft();
         CHECK(validator.validate(draft).ok());
@@ -132,7 +136,7 @@ TEST_SUITE("ReportValidator") {
     TEST_CASE("a null rule is refused") {
         ReportValidator validator;
 
-        CHECK_THROWS_AS(validator.addRule(nullptr), std::invalid_argument);
+        CHECK_THROWS_AS(validator.addRule(nullptr), invalid_argument);
         CHECK(validator.ruleCount() == 0);
     }
 }

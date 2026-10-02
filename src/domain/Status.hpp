@@ -1,6 +1,11 @@
+// Status.hpp
+// The statuses a report goes through and the rules of its lifecycle.
+
 #pragma once
 
 #include <string_view>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -19,7 +24,7 @@ enum class Status {
 };
 
 /// Human-readable name of a status.
-[[nodiscard]] constexpr std::string_view nameOf(Status status) noexcept {
+[[nodiscard]] constexpr string_view nameOf(Status status) noexcept {
     switch (status) {
         case Status::New:        return "New";
         case Status::InProgress: return "In progress";

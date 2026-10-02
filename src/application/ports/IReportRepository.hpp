@@ -1,3 +1,6 @@
+// IReportRepository.hpp
+// Port: where the reports are kept. ReportService depends on this interface, not on a storage class (DIP).
+
 #pragma once
 
 #include "domain/Report.hpp"
@@ -6,6 +9,8 @@
 
 #include <optional>
 #include <vector>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -21,10 +26,10 @@ public:
     /// Stores the report. A report with the same id is replaced.
     virtual void save(const Report& report) = 0;
 
-    [[nodiscard]] virtual std::optional<Report> findById(const ReportId& id) const = 0;
+    [[nodiscard]] virtual optional<Report> findById(const ReportId& id) const = 0;
 
     /// Every report that satisfies the specification, oldest first.
-    [[nodiscard]] virtual std::vector<Report> findAll(const IReportSpecification& specification) const = 0;
+    [[nodiscard]] virtual vector<Report> findAll(const IReportSpecification& specification) const = 0;
 };
 
 }  // namespace civicdesk

@@ -1,3 +1,6 @@
+// IReportSpecification.hpp
+// The interface of a search condition. It is the extension point of searching (OCP).
+
 #pragma once
 
 #include "domain/Report.hpp"

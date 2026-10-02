@@ -1,3 +1,6 @@
+// ReportValidator.hpp
+// Checks a report draft against the rules plugged into it (SRP, OCP).
+
 #pragma once
 
 #include "domain/Report.hpp"
@@ -7,6 +10,8 @@
 #include <cstddef>
 #include <memory>
 #include <vector>
+
+using namespace std;
 
 namespace civicdesk {
 
@@ -18,15 +23,15 @@ namespace civicdesk {
 class ReportValidator {
 public:
     /// Plugs in one more rule. Returns the validator, so calls can be chained.
-    ReportValidator& addRule(std::unique_ptr<IValidationRule> rule);
+    ReportValidator& addRule(unique_ptr<IValidationRule> rule);
 
     /// Runs every rule, so the citizen sees all the problems at once and not one at a time.
     [[nodiscard]] ValidationResult validate(const ReportDraft& draft) const;
 
-    [[nodiscard]] std::size_t ruleCount() const noexcept { return rules_.size(); }
+    [[nodiscard]] size_t ruleCount() const noexcept { return rules_.size(); }
 
 private:
-    std::vector<std::unique_ptr<IValidationRule>> rules_;
+    vector<unique_ptr<IValidationRule>> rules_;
 };
 
 }  // namespace civicdesk
