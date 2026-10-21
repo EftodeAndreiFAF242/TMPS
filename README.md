@@ -14,6 +14,7 @@ Each laboratory work has its own folder, with its own report.
 | Laboratory work | Topic | Folder |
 | --- | --- | --- |
 | 1 | SOLID principles | [Lab1](Lab1/) |
+| 2 | Creational design patterns | [Lab2](Lab2/) |
 
 ## How to run
 
@@ -32,4 +33,5 @@ exit.
 ```
 main.cpp    the menu and the demo of each laboratory work
 Lab1/       laboratory work 1: one file for each SOLID principle
+Lab2/       laboratory work 2: one file for each creational pattern
 ```
