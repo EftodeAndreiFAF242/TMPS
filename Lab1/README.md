@@ -22,7 +22,9 @@ Each principle has its own file:
 | [OpenClosed.hpp](OpenClosed.hpp) | Open/Closed (OCP) | `Rule`, `CategoryRule`, `DescriptionRule`, `Validator` |
 | [DependencyInversion.hpp](DependencyInversion.hpp) | Dependency Inversion (DIP) | `Notifier`, `ConsoleNotifier`, `EmailNotifier`, `ReportService` |
 
-The demo is the function `runLab1()` in [main.cpp](../main.cpp).
+The ready example is the function `runLab1()` in [main.cpp](../main.cpp) (menu option 1).
+Option 2, `runLab1Input()`, uses the same classes with reports typed in the console: the user
+picks the notifier, types as many reports as they want, and sees every saved report at the end.
 
 ## 1. Single Responsibility Principle
 

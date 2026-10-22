@@ -1,7 +1,8 @@
 // main.cpp
 //
-// The start of the program. It shows a menu, the user picks a laboratory work,
-// and the demo of that laboratory work runs.
+// The start of the program. It shows a menu, and the user picks a laboratory work and how to run it:
+// the ready example, where the data is already written in the code,
+// or with their own data, typed in the console.
 //
 // Build:  g++ main.cpp -o tmps
 // Run:    ./tmps
@@ -13,6 +14,15 @@
 #include "Lab2/Builder.hpp"
 #include "Lab2/FactoryMethod.hpp"
 #include "Lab2/ObjectPool.hpp"
+
+// Shows a question and returns the line the user types.
+// If there is nothing more to read, it returns an empty text.
+string ask(string question) {
+    cout << question;
+    string answer;
+    getline(cin, answer);
+    return answer;
+}
 
 // Laboratory work 1: SOLID principles.
 // The three parts use the same objects, so together they are the base of the application.
@@ -73,6 +83,45 @@ void runLab1() {
     }
 }
 
+// Laboratory work 1 with your own data: the same classes, but the reports are typed in the console.
+void runLab1Input() {
+    cout << "\n=== Laboratory work 1: your own reports ===\n";
+
+    ReportStorage storage;
+    CategoryRule categoryRule;
+    DescriptionRule descriptionRule;
+    Validator validator;
+    validator.addRule(&categoryRule);
+    validator.addRule(&descriptionRule);
+
+    // Dependency Inversion: the user picks the notifier, and the same service works with either one.
+    ConsoleNotifier consoleNotifier;
+    EmailNotifier emailNotifier;
+    Notifier* notifier = &consoleNotifier;
+    if (ask("How should the citizen be told? 1 - console, 2 - e-mail: ") == "2") {
+        notifier = &emailNotifier;
+    }
+    ReportService service(&storage, &validator, notifier);
+
+    // Open/Closed: every report goes through the rules of the validator.
+    cout << "Known categories: Pothole, Street light, Garbage. A description needs at least 10 characters.\n";
+    while (true) {
+        string category = ask("\nCategory (or press Enter to stop): ");
+        if (category == "") {
+            break;
+        }
+        string description = ask("Description: ");
+        service.submit(Report(category, description));
+    }
+
+    // Single Responsibility: the storage kept the reports, and the printer shows them.
+    cout << "\nEvery report in the storage:\n";
+    ReportPrinter printer;
+    for (Report report : storage.all()) {
+        printer.print(report);
+    }
+}
+
 // Laboratory work 2: creational design patterns.
 // It continues lab 1: the reports go into the one database, each report becomes a work order,
 // and a department sends a crew to do the job.
@@ -115,22 +164,24 @@ void runLab2() {
     cout << "\n--- 2. Builder ---\n";
 
     // Any part of the program can ask for the database and gets the same reports.
+    // The three reports saved above are the last three in it.
     vector<Report> reports = Database::getInstance().getStorage()->all();
+    int last = reports.size() - 1;
 
     // Every optional part is given.
-    WorkOrder potholeOrder = WorkOrderBuilder(reports[0], "Stefan cel Mare Blvd. 12")
+    WorkOrder potholeOrder = WorkOrderBuilder(reports[last - 2], "Stefan cel Mare Blvd. 12")
                                  .setPriority("High")
                                  .setDeadline(2)
                                  .setNote("Children cross here, put up a warning sign first")
                                  .build();
 
     // Only the deadline is given. The priority keeps its default value.
-    WorkOrder lightOrder = WorkOrderBuilder(reports[1], "Dacia Blvd. 5")
+    WorkOrder lightOrder = WorkOrderBuilder(reports[last - 1], "Dacia Blvd. 5")
                                .setDeadline(3)
                                .build();
 
     // No optional part is given. Everything else keeps the default values.
-    WorkOrder garbageOrder = WorkOrderBuilder(reports[2], "Valea Morilor park").build();
+    WorkOrder garbageOrder = WorkOrderBuilder(reports[last], "Valea Morilor park").build();
 
     WorkOrderPrinter orderPrinter;
     orderPrinter.print(potholeOrder);
@@ -174,26 +225,104 @@ void runLab2() {
          << ". It is the same truck, it was not made again.\n";
 }
 
+// Laboratory work 2 with your own data: one report goes all the way from the citizen to a crew.
+void runLab2Input() {
+    cout << "\n=== Laboratory work 2: your own report ===\n";
+
+    // Singleton: the report is saved in the one database, next to the reports saved before.
+    Database& database = Database::getInstance();
+
+    CategoryRule categoryRule;
+    DescriptionRule descriptionRule;
+    Validator validator;
+    validator.addRule(&categoryRule);
+    validator.addRule(&descriptionRule);
+    ConsoleNotifier notifier;
+    ReportService service(database.getStorage(), &validator, &notifier);
+
+    string category = ask("Category (Pothole, Street light, Garbage): ");
+    string description = ask("Description (at least 10 characters): ");
+    if (!service.submit(Report(category, description))) {
+        return;  // a refused report gets no work order
+    }
+
+    // The report that was just saved is the last one in the database, and now it has its id.
+    vector<Report> reports = database.getStorage()->all();
+    Report report = reports.back();
+
+    cout << "Every report in the database:\n";
+    ReportPrinter printer;
+    for (Report saved : reports) {
+        printer.print(saved);
+    }
+
+    // Builder: the address is needed. The other parts can be left empty, and then they keep their default values.
+    string address = ask("\nAddress: ");
+    WorkOrderBuilder builder(report, address);
+
+    string priority = ask("Priority (press Enter for Normal): ");
+    if (priority != "") {
+        builder.setPriority(priority);
+    }
+
+    string deadline = ask("Deadline in days (press Enter for 7): ");
+    if (deadline != "") {
+        // stoi turns the text into a number. If the text is not a number, it throws an error, and catch handles it.
+        try {
+            builder.setDeadline(stoi(deadline));
+        } catch (...) {
+            cout << "That is not a number, so the deadline stays 7 days.\n";
+        }
+    }
+
+    string note = ask("Note (press Enter for none): ");
+    if (note != "") {
+        builder.setNote(note);
+    }
+
+    WorkOrder order = builder.build();
+    WorkOrderPrinter orderPrinter;
+    orderPrinter.print(order);
+
+    // Factory Method: the department is picked by the category, and it makes its own kind of crew.
+    RoadDepartment roads;
+    LightingDepartment lighting;
+    SanitationDepartment sanitation;
+    Department* department = &roads;
+    if (category == "Street light") {
+        department = &lighting;
+    } else if (category == "Garbage") {
+        department = &sanitation;
+    }
+    department->handle(order);
+}
+
 int main() {
     string choice;
 
     while (true) {
         cout << "\n===== TMPS laboratory works =====\n";
-        cout << "1. Laboratory work 1 - SOLID principles\n";
-        cout << "2. Laboratory work 2 - Creational design patterns\n";
+        cout << "1. Laboratory work 1 - SOLID principles (ready example)\n";
+        cout << "2. Laboratory work 1 - SOLID principles (type your own reports)\n";
+        cout << "3. Laboratory work 2 - Creational design patterns (ready example)\n";
+        cout << "4. Laboratory work 2 - Creational design patterns (type your own report)\n";
         cout << "0. Exit\n";
         cout << "Your choice: ";
 
-        // The choice is read as text, not as a number, so typing letters can't break the menu.
+        // The whole line is read as text, not as a number, so typing letters can't break the menu.
         // The reading fails when there is nothing more to read, and then the program stops.
-        if (!(cin >> choice)) {
+        if (!getline(cin, choice)) {
             break;
         }
 
         if (choice == "1") {
             runLab1();
         } else if (choice == "2") {
+            runLab1Input();
+        } else if (choice == "3") {
             runLab2();
+        } else if (choice == "4") {
+            runLab2Input();
         } else if (choice == "0") {
             break;
         } else {

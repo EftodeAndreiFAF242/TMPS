@@ -25,13 +25,17 @@ g++ main.cpp -o tmps
 ./tmps
 ```
 
-The program shows a menu. Type the number of a laboratory work to run its demo, or `0` to
-exit.
+The program shows a menu. Each laboratory work can run in two ways:
+
+- **the ready example**: the data is already written in the code, so every case is shown;
+- **your own data**: you type the reports in the console, and the same classes handle them.
+
+Type `0` to exit.
 
 ## Files
 
 ```
-main.cpp    the menu and the demo of each laboratory work
+main.cpp    the menu, the ready example of each laboratory work and the version with your own data
 Lab1/       laboratory work 1: one file for each SOLID principle
 Lab2/       laboratory work 2: one file for each creational pattern
 ```

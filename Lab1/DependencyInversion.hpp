@@ -1,14 +1,13 @@
-// DependencyInversion.hpp
-//
-// SOLID principle 3: Dependency Inversion Principle (DIP).
-// "High-level code should not depend on low-level details. Both should depend on an abstraction."
-//
-// ReportService is the high-level code: it decides what happens when a report is submitted.
-// The way the citizen is told about it (screen, e-mail) is a low-level detail.
-// So the service knows only the Notifier interface, and the real notifier is given to it from outside.
-//
-// The wrong way would be to write "cout << ..." inside the service.
-// Then switching to e-mail would mean rewriting the service.
+
+
+//Software entities must depend on abstractions, not on concrete things. 
+//Separate modules, that are located on different levels must not depend directly on each other, but should rely on abstractions.
+
+
+
+//On screen: How should the citizen be told? 1 - console, 2 - e-mail:
+//What proves it: you choose at runtime, and messages start with [console] or [e-mail], but the code of ReportService stays the same.
+
 
 #pragma once
 

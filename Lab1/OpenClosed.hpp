@@ -1,14 +1,13 @@
-// OpenClosed.hpp
-//
+
+//Each piece of software should be open for extension and closed for modification.
+//The behavior should be extended without needing to modify the internals.
+
+//On screen: you type the category and description, and you may get Report refused: ...
+
+
+
 // SOLID principle 2: Open/Closed Principle (OCP).
-// "Code should be open for extension and closed for modification."
-//
-// The Validator checks a report against a list of rules.
-// To add a new rule we write a new class that inherits from Rule.
-// We do not change the Validator and we do not change the rules that already exist.
-//
-// The wrong way would be one function full of "if" statements, which has to be
-// edited every time a rule is added.
+
 
 #pragma once
 
