@@ -21,9 +21,13 @@ Each laboratory work has its own folder, with its own report.
 The project needs only a C++ compiler (g++).
 
 ```
-g++ main.cpp -o tmps
+g++ -I. main.cpp Lab1/*.cpp Lab2/*.cpp -o tmps
 ./tmps
 ```
+
+`-I.` tells g++ that include paths start at the project folder, and `Lab1/*.cpp Lab2/*.cpp`
+compiles the code of every class together with `main.cpp`. Building only `main.cpp` is not
+enough, because the code of the methods is in the other `.cpp` files.
 
 The program shows a menu. Each laboratory work can run in two ways:
 

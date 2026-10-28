@@ -4,16 +4,22 @@
 // the ready example, where the data is already written in the code,
 // or with their own data, typed in the console.
 //
-// Build:  g++ main.cpp -o tmps
+// Build:  g++ -I. main.cpp Lab1/*.cpp Lab2/*.cpp -o tmps
 // Run:    ./tmps
 
-#include "Lab1/SingleResponsibility.hpp"
-#include "Lab1/OpenClosed.hpp"
-#include "Lab1/DependencyInversion.hpp"
-#include "Lab2/Singleton.hpp"
-#include "Lab2/Builder.hpp"
-#include "Lab2/FactoryMethod.hpp"
-#include "Lab2/ObjectPool.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "Lab1/DependencyInversion.h"
+#include "Lab1/OpenClosed.h"
+#include "Lab1/SingleResponsibility.h"
+#include "Lab2/Builder.h"
+#include "Lab2/FactoryMethod.h"
+#include "Lab2/ObjectPool.h"
+#include "Lab2/Singleton.h"
+
+using namespace std;
 
 // Shows a question and returns the line the user types.
 // If there is nothing more to read, it returns an empty text.

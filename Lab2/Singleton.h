@@ -5,26 +5,19 @@
 
 #pragma once
 
-#include "../Lab1/SingleResponsibility.hpp"
+#include "Lab1/SingleResponsibility.h"
 
 class Database {
 public:
-    static Database& getInstance() {
-        static Database instance;
-        return instance;
-    }
+    static Database& getInstance();
 
     Database(const Database&) = delete;
     Database& operator=(const Database&) = delete;
 
-    ReportStorage* getStorage() {
-        return &storage;
-    }
+    ReportStorage* getStorage();
 
 private:
-    Database() {
-        cout << "[database] The database was created.\n";
-    }
+    Database();
 
     ReportStorage storage;
 };
