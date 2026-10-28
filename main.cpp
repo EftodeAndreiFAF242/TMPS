@@ -122,26 +122,20 @@ void runLab1Input() {
     }
 }
 
-// Laboratory work 2: creational design patterns.
-// It continues lab 1: the reports go into the one database, each report becomes a work order,
-// and a department sends a crew to do the job.
 void runLab2() {
     cout << "\n=== Laboratory work 2: Creational design patterns ===\n";
 
-    // ---- 1. Singleton: the whole program uses the same database ----
     cout << "\n--- 1. Singleton ---\n";
 
-    Database& first = Database::getInstance();   // the first call makes the database
-    Database& second = Database::getInstance();  // the second call makes nothing, it gets the same one
+    Database& first = Database::getInstance();
+    Database& second = Database::getInstance();
 
-    // Two names for one object have the same address in memory.
     if (&first == &second) {
         cout << "Both calls returned the same database.\n";
     } else {
         cout << "The calls returned two different databases.\n";
     }
 
-    // The service from lab 1 still gets its storage from outside. Now it is the database's storage.
     CategoryRule categoryRule;
     DescriptionRule descriptionRule;
     Validator validator;
@@ -156,31 +150,25 @@ void runLab2() {
 
     cout << "The reports were saved through \"first\" and are read through \"second\":\n";
     ReportPrinter printer;
-    for (Report report : second.getStorage()->all()) {
+    for (const Report& report : second.getStorage()->all()) {
         printer.print(report);
     }
 
-    // ---- 2. Builder: work orders with only the parts each one needs ----
     cout << "\n--- 2. Builder ---\n";
 
-    // Any part of the program can ask for the database and gets the same reports.
-    // The three reports saved above are the last three in it.
     vector<Report> reports = Database::getInstance().getStorage()->all();
-    int last = reports.size() - 1;
+    size_t last = reports.size() - 1;
 
-    // Every optional part is given.
     WorkOrder potholeOrder = WorkOrderBuilder(reports[last - 2], "Stefan cel Mare Blvd. 12")
                                  .setPriority("High")
                                  .setDeadline(2)
                                  .setNote("Children cross here, put up a warning sign first")
                                  .build();
 
-    // Only the deadline is given. The priority keeps its default value.
     WorkOrder lightOrder = WorkOrderBuilder(reports[last - 1], "Dacia Blvd. 5")
                                .setDeadline(3)
                                .build();
 
-    // No optional part is given. Everything else keeps the default values.
     WorkOrder garbageOrder = WorkOrderBuilder(reports[last], "Valea Morilor park").build();
 
     WorkOrderPrinter orderPrinter;
@@ -188,19 +176,16 @@ void runLab2() {
     orderPrinter.print(lightOrder);
     orderPrinter.print(garbageOrder);
 
-    // ---- 3. Factory Method: each department makes its own kind of crew ----
     cout << "\n--- 3. Factory Method ---\n";
 
     RoadDepartment roads;
     LightingDepartment lighting;
     SanitationDepartment sanitation;
 
-    // handle() is the same code for all three. Only the crew that createCrew() makes is different.
     roads.handle(potholeOrder);
     lighting.handle(lightOrder);
     sanitation.handle(garbageOrder);
 
-    // ---- 4. Object Pool (extra): the crews share a few trucks ----
     cout << "\n--- 4. Object Pool (extra) ---\n";
 
     TruckPool pool(2);
@@ -225,11 +210,9 @@ void runLab2() {
          << ". It is the same truck, it was not made again.\n";
 }
 
-// Laboratory work 2 with your own data: one report goes all the way from the citizen to a crew.
 void runLab2Input() {
     cout << "\n=== Laboratory work 2: your own report ===\n";
 
-    // Singleton: the report is saved in the one database, next to the reports saved before.
     Database& database = Database::getInstance();
 
     CategoryRule categoryRule;
@@ -243,31 +226,28 @@ void runLab2Input() {
     string category = ask("Category (Pothole, Street light, Garbage): ");
     string description = ask("Description (at least 10 characters): ");
     if (!service.submit(Report(category, description))) {
-        return;  // a refused report gets no work order
+        return;
     }
 
-    // The report that was just saved is the last one in the database, and now it has its id.
     vector<Report> reports = database.getStorage()->all();
-    Report report = reports.back();
+    const Report& report = reports.back();
 
     cout << "Every report in the database:\n";
     ReportPrinter printer;
-    for (Report saved : reports) {
+    for (const Report& saved : reports) {
         printer.print(saved);
     }
 
-    // Builder: the address is needed. The other parts can be left empty, and then they keep their default values.
     string address = ask("\nAddress: ");
     WorkOrderBuilder builder(report, address);
 
     string priority = ask("Priority (press Enter for Normal): ");
-    if (priority != "") {
+    if (!priority.empty()) {
         builder.setPriority(priority);
     }
 
     string deadline = ask("Deadline in days (press Enter for 7): ");
-    if (deadline != "") {
-        // stoi turns the text into a number. If the text is not a number, it throws an error, and catch handles it.
+    if (!deadline.empty()) {
         try {
             builder.setDeadline(stoi(deadline));
         } catch (...) {
@@ -276,7 +256,7 @@ void runLab2Input() {
     }
 
     string note = ask("Note (press Enter for none): ");
-    if (note != "") {
+    if (!note.empty()) {
         builder.setNote(note);
     }
 
@@ -284,11 +264,10 @@ void runLab2Input() {
     WorkOrderPrinter orderPrinter;
     orderPrinter.print(order);
 
-    // Factory Method: the department is picked by the category, and it makes its own kind of crew.
     RoadDepartment roads;
     LightingDepartment lighting;
     SanitationDepartment sanitation;
-    Department* department = &roads;
+    const Department* department = &roads;
     if (category == "Street light") {
         department = &lighting;
     } else if (category == "Garbage") {

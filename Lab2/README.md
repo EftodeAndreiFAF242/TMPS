@@ -27,7 +27,10 @@ file:
 | [FactoryMethod.hpp](FactoryMethod.hpp) | Factory Method | `Crew` and 3 crews, `Department` and 3 departments | each department chooses which crew it makes |
 | [ObjectPool.hpp](ObjectPool.hpp) | Object Pool (extra) | `Truck`, `TruckPool` | trucks are made once and reused |
 
-The demo is the function `runLab2()` in [main.cpp](../main.cpp).
+The ready example is the function `runLab2()` in [main.cpp](../main.cpp) (menu option 3).
+Option 4, `runLab2Input()`, takes one report typed in the console all the way through: it is
+saved in the database, the user gives the parts of the work order (and can skip the optional
+ones), and the department for its category sends a crew.
 
 ## 1. Singleton
 
@@ -45,8 +48,8 @@ public:
         return instance;
     }
 
-    Database(const Database& other) = delete;        // no copies
-    void operator=(const Database& other) = delete;
+    Database(const Database&) = delete;              // no copies
+    Database& operator=(const Database&) = delete;
 
     ReportStorage* getStorage() { return &storage; }
 
@@ -128,7 +131,7 @@ Every value has a name next to it, and the parts that are not given keep their d
 values. The calls can follow each other because every method returns the builder itself:
 
 ```cpp
-WorkOrderBuilder& setPriority(string priority) {
+WorkOrderBuilder& setPriority(const string& priority) {
     order.priority = priority;
     return *this;
 }
@@ -160,19 +163,18 @@ factory method `createCrew()`, which has no body in `Department`:
 ```cpp
 class Department {
 public:
-    virtual Crew* createCrew() = 0;   // the factory method
+    virtual unique_ptr<Crew> createCrew() const = 0;   // the factory method
 
-    void handle(const WorkOrder& order) {
-        Crew* crew = createCrew();    // the subclass decides which crew this is
+    void handle(const WorkOrder& order) const {
+        unique_ptr<Crew> crew = createCrew();   // the subclass decides which crew this is
         crew->work(order);
-        delete crew;
     }
 };
 
 class RoadDepartment : public Department {
 public:
-    Crew* createCrew() override {
-        return new RoadCrew();
+    unique_ptr<Crew> createCrew() const override {
+        return make_unique<RoadCrew>();
     }
 };
 ```
@@ -182,9 +184,11 @@ public:
 example one for parks, is one new subclass with its own `createCrew()`. `Department` and
 the other departments are not edited, which is the Open/Closed Principle from lab 1.
 
-The crew is made with `new` because it has to outlive `createCrew()`. So `handle()`
-deletes it when the job is done. `Crew` has a virtual destructor, so `delete` destroys the
-right kind of crew.
+The crew has to outlive `createCrew()`, so it is made on the heap with `make_unique` and
+returned inside a `unique_ptr`, a pointer that owns its object. When `crew` goes out of
+scope at the end of `handle()`, the `unique_ptr` deletes the crew by itself, so there is
+no `delete` to forget. `Crew` has a virtual destructor, so the right kind of crew is
+destroyed.
 
 ## 4. Object Pool (extra)
 
@@ -197,7 +201,7 @@ same truck.
 ```cpp
 class TruckPool {
 public:
-    TruckPool(int size);          // makes every truck, once
+    explicit TruckPool(int size); // makes every truck, once
     Truck* acquire();             // lends a free truck, or nullptr if all are in use
     void release(Truck* truck);   // takes a truck back
 private:
@@ -280,14 +284,24 @@ New things compared to lab 1:
 | `static Database& getInstance()` | a static method: it belongs to the class, so it is called as `Database::getInstance()`, without an object |
 | `static Database instance;` inside a function | made the first time the function runs, and it stays alive until the program ends |
 | `Database&` | a reference: the object itself, not a copy of it |
-| `Database(const Database& other) = delete;` | `= delete` forbids this method. This one is the copy constructor, so copying a `Database` does not compile |
-| `void operator=(...) = delete;` | forbids assigning one `Database` to another with `=` |
+| `Database(const Database&) = delete;` | `= delete` forbids this method. This one is the copy constructor, so copying a `Database` does not compile |
+| `Database& operator=(const Database&) = delete;` | forbids assigning one `Database` to another with `=` |
 | constructor under `private:` | only the code of the class itself can make an object |
 | `&first == &second` | compares two addresses. The same address means the same object |
 | `string priority = "Normal";` | a field with a default value |
+| `const string& priority` | the text is passed by reference, so it is not copied, and `const` means the method can't change it |
+| `WorkOrder build() const` | a `const` method: it does not change the object it is called on |
 | `return *this;` | `this` points to the current object, and `*this` is the object itself |
 | `WorkOrderBuilder(...).setPriority(...).build()` | the methods are called one after another on the same builder |
-| `new RoadCrew()` | makes an object that stays alive until `delete` is called, and returns a pointer to it |
-| `delete crew;` | destroys an object made with `new` |
+| `virtual ~Crew() = default;` | the destructor is virtual, and `= default` lets the compiler write its body |
+| `unique_ptr<Crew>` | a pointer that owns its object and deletes it by itself when the pointer goes out of scope |
+| `make_unique<RoadCrew>()` | makes a `RoadCrew` on the heap and returns a `unique_ptr` to it |
+| `override` together with `const` | the method in the subclass must match the base one exactly, `const` included |
+| `explicit TruckPool(int size)` | the constructor can't be used for a hidden conversion, so `TruckPool pool = 2;` does not compile |
+| `Truck(int number) : number(number) {}` | an initializer list: the field `number` is set from the parameter `number` before the body runs |
+| `trucks.reserve(size)` | the vector makes room for every truck at once, instead of growing step by step |
+| `trucks.emplace_back(i)` | builds the truck directly inside the vector, without making a copy first |
 | `nullptr` | a pointer that points to nothing |
 | `for (Truck& truck : trucks)` | the `&` means the loop works on the trucks in the vector, not on copies |
+| `for (const Report& report : ...)` | the loop reads each report without copying it and can't change it |
+| `size_t` | the type the standard library uses for sizes and positions, a number that can't be negative |
