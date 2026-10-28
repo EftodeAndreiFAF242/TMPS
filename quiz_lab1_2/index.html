@@ -69,6 +69,17 @@
   .word h3 { font-size: 1rem; margin: 0 0 4px; color: var(--accent); }
   .word p { margin: 0; }
   .word pre { margin: 8px 0 0; }
+  .uml { display: block; width: 100%; max-width: 360px; height: auto; margin-top: 10px; }
+  .uml rect, .uml path, .uml circle { fill: var(--card); stroke: var(--text); stroke-width: 1.2; }
+  .uml line, .uml .line { fill: none; stroke: var(--text); stroke-width: 1.2; }
+  .uml .fill { fill: var(--text); }
+  .uml .dash { stroke-dasharray: 5 4; }
+  .uml text { fill: var(--text); stroke: none; font-size: 13px; font-family: system-ui, "Segoe UI", sans-serif; }
+  .uml .label { fill: var(--muted); }
+  @media (max-width: 500px) {
+    .card { padding: 16px; }
+    pre { font-size: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -271,6 +282,7 @@
         item.className = "word";
         add(item, "h3", w.word);
         add(item, "p", w.text);
+        if (w.svg) item.insertAdjacentHTML("beforeend", w.svg);
         if (w.code) add(item, "pre", w.code);
       }
     }
