@@ -31,7 +31,7 @@
   }
   button:hover:not(:disabled) { border-color: var(--accent); }
   button.active, button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  #topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  #topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
   .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
   #progress { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
   .status { display: flex; justify-content: space-between; margin: 8px 0 16px; font-size: .9rem; }
@@ -53,39 +53,69 @@
   .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .missed { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .answer { color: var(--good); font-weight: 600; }
+  .tabs {
+    display: inline-flex; gap: 4px; padding: 4px; margin: 8px 0 16px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .tabs button { border: none; padding: 6px 20px; }
+  #search {
+    width: 100%; margin: 0 0 16px; padding: 10px 12px; font: inherit; color: var(--text);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  }
+  #search:focus { outline: none; border-color: var(--accent); }
+  .group { margin-bottom: 16px; }
+  .group h2 { font-size: 1.15rem; }
+  .word + .word { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+  .word h3 { font-size: 1rem; margin: 0 0 4px; color: var(--accent); }
+  .word p { margin: 0; }
+  .word pre { margin: 8px 0 0; }
 </style>
 </head>
 <body>
 <main>
   <h1>TMPS Quiz: Lab 1 and Lab 2</h1>
   <p class="muted">SOLID principles and creational design patterns, from the course slides.
-    Press 1 to 4 to answer and Enter for the next question.</p>
+    Don't know a word? Open the Glossary; your quiz progress stays where it is.</p>
 
-  <div id="topics"></div>
-  <div class="bar"><div id="progress"></div></div>
-  <div class="status muted"><span id="count"></span><span id="score"></span></div>
+  <div class="tabs">
+    <button class="active" id="quizTab">Quiz</button>
+    <button id="glossaryTab">Glossary</button>
+  </div>
 
-  <section class="card" id="quiz">
-    <div id="tag"></div>
-    <p id="question"></p>
-    <pre id="code"></pre>
-    <div id="options"></div>
-    <p class="why" id="why"></p>
-    <div class="actions"><button class="primary" id="next">Next</button></div>
-  </section>
+  <div id="glossaryPage" hidden>
+    <input id="search" type="search" placeholder="Search a word, for example: instance">
+    <div id="words"></div>
+  </div>
 
-  <section class="card" id="end" hidden>
-    <h2 id="result"></h2>
-    <p class="muted" id="verdict"></p>
-    <div id="missed"></div>
-    <div class="actions">
-      <button id="retryWrong">Retry the wrong ones</button>
-      <button class="primary" id="restart">Start again</button>
-    </div>
-  </section>
+  <div id="quizPage">
+    <p class="muted">Press 1 to 4 to answer and Enter for the next question.</p>
+    <div id="topics"></div>
+    <div class="bar"><div id="progress"></div></div>
+    <div class="status muted"><span id="count"></span><span id="score"></span></div>
+
+    <section class="card" id="quiz">
+      <div id="tag"></div>
+      <p id="question"></p>
+      <pre id="code"></pre>
+      <div id="options"></div>
+      <p class="why" id="why"></p>
+      <div class="actions"><button class="primary" id="next">Next</button></div>
+    </section>
+
+    <section class="card" id="end" hidden>
+      <h2 id="result"></h2>
+      <p class="muted" id="verdict"></p>
+      <div id="missed"></div>
+      <div class="actions">
+        <button id="retryWrong">Retry the wrong ones</button>
+        <button class="primary" id="restart">Start again</button>
+      </div>
+    </section>
+  </div>
 </main>
 
 <script src="questions.js"></script>
+<script src="glossary.js"></script>
 <script>
   const $ = id => document.getElementById(id);
 
@@ -200,7 +230,7 @@
 
   // Keys 1-4 pick an answer, Enter goes to the next question.
   document.addEventListener("keydown", e => {
-    if ($("quiz").hidden) return;
+    if ($("quizPage").hidden || $("quiz").hidden) return;
     const option = $("options").children[Number(e.key) - 1];
     if (option && !option.disabled) option.click();
     if (e.key === "Enter" && !$("next").hidden) {
@@ -215,6 +245,39 @@
     b.onclick = () => chooseTopic(topic, b);
   }
   $("topics").firstChild.click();
+
+  // Tabs: switch between the quiz and the glossary (the quiz keeps its progress).
+  function openTab(name) {
+    $("quizPage").hidden = name !== "quiz";
+    $("glossaryPage").hidden = name !== "glossary";
+    $("quizTab").classList.toggle("active", name === "quiz");
+    $("glossaryTab").classList.toggle("active", name === "glossary");
+  }
+  $("quizTab").onclick = () => openTab("quiz");
+  $("glossaryTab").onclick = () => openTab("glossary");
+
+  // Shows the glossary words whose name contains the searched text.
+  function showWords() {
+    const search = $("search").value.trim().toLowerCase();
+    $("words").innerHTML = "";
+    for (const group of GLOSSARY) {
+      const words = group.words.filter(w => w.word.toLowerCase().includes(search));
+      if (words.length === 0) continue;
+      const card = add($("words"), "section", "");
+      card.className = "card group";
+      add(card, "h2", group.title);
+      for (const w of words) {
+        const item = add(card, "div", "");
+        item.className = "word";
+        add(item, "h3", w.word);
+        add(item, "p", w.text);
+        if (w.code) add(item, "pre", w.code);
+      }
+    }
+    if ($("words").children.length === 0) add($("words"), "p", "No word found.").className = "muted";
+  }
+  $("search").oninput = showWords;
+  showWords();
 </script>
 </body>
 </html>
