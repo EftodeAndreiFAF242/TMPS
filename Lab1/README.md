@@ -14,13 +14,18 @@ The application takes reports about city problems. At this stage it does three t
 with a report: it checks it, it saves it, and it tells the citizen what happened. This is
 the base the next laboratory works build on.
 
-Each principle has its own file:
+Each principle has its own pair of files: the `.h` declares the classes and the `.cpp` has
+the code of their methods.
 
-| File | Principle | Classes in it |
+| Files | Principle | Classes in it |
 | --- | --- | --- |
-| [SingleResponsibility.hpp](SingleResponsibility.hpp) | Single Responsibility (SRP) | `Report`, `ReportStorage`, `ReportPrinter` |
-| [OpenClosed.hpp](OpenClosed.hpp) | Open/Closed (OCP) | `Rule`, `CategoryRule`, `DescriptionRule`, `Validator` |
-| [DependencyInversion.hpp](DependencyInversion.hpp) | Dependency Inversion (DIP) | `Notifier`, `ConsoleNotifier`, `EmailNotifier`, `ReportService` |
+| [SingleResponsibility.h](SingleResponsibility.h), [SingleResponsibility.cpp](SingleResponsibility.cpp) | Single Responsibility (SRP) | `Report`, `ReportStorage`, `ReportPrinter` |
+| [OpenClosed.h](OpenClosed.h), [OpenClosed.cpp](OpenClosed.cpp) | Open/Closed (OCP) | `Rule`, `CategoryRule`, `DescriptionRule`, `Validator` |
+| [DependencyInversion.h](DependencyInversion.h), [DependencyInversion.cpp](DependencyInversion.cpp) | Dependency Inversion (DIP) | `Notifier`, `ConsoleNotifier`, `EmailNotifier`, `ReportService` |
+
+The code snippets below show a class and the code of its methods together, so they can be
+read in one place. In the project, the class is in the `.h` file and the code of its
+methods is in the `.cpp` file.
 
 The ready example is the function `runLab1()` in [main.cpp](../main.cpp) (menu option 1).
 Option 2, `runLab1Input()`, uses the same classes with reports typed in the console: the user

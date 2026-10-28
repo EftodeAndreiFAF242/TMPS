@@ -18,14 +18,18 @@ a work order for it, and the department in charge sends a repair crew.
 
 Lab 2 uses the classes from lab 1 (`Report`, `ReportStorage`, `Validator`,
 `ReportService`, `ConsoleNotifier`) and does not change them. Each pattern has its own
-file:
+pair of files: the `.h` declares the classes and the `.cpp` has the code of their methods.
 
-| File | Pattern | Classes in it | What it decides about making objects |
+| Files | Pattern | Classes in it | What it decides about making objects |
 | --- | --- | --- | --- |
-| [Singleton.hpp](Singleton.hpp) | Singleton | `Database` | there is only one database |
-| [Builder.hpp](Builder.hpp) | Builder | `WorkOrder`, `WorkOrderBuilder`, `WorkOrderPrinter` | a work order is made step by step |
-| [FactoryMethod.hpp](FactoryMethod.hpp) | Factory Method | `Crew` and 3 crews, `Department` and 3 departments | each department chooses which crew it makes |
-| [ObjectPool.hpp](ObjectPool.hpp) | Object Pool (extra) | `Truck`, `TruckPool` | trucks are made once and reused |
+| [Singleton.h](Singleton.h), [Singleton.cpp](Singleton.cpp) | Singleton | `Database` | there is only one database |
+| [Builder.h](Builder.h), [Builder.cpp](Builder.cpp) | Builder | `WorkOrder`, `WorkOrderBuilder`, `WorkOrderPrinter` | a work order is made step by step |
+| [FactoryMethod.h](FactoryMethod.h), [FactoryMethod.cpp](FactoryMethod.cpp) | Factory Method | `Crew` and 3 crews, `Department` and 3 departments | each department chooses which crew it makes |
+| [ObjectPool.h](ObjectPool.h), [ObjectPool.cpp](ObjectPool.cpp) | Object Pool (extra) | `Truck`, `TruckPool` | trucks are made once and reused |
+
+The code snippets below show a class and the code of its methods together, so they can be
+read in one place. In the project, the class is in the `.h` file and the code of its
+methods is in the `.cpp` file.
 
 The ready example is the function `runLab2()` in [main.cpp](../main.cpp) (menu option 3).
 Option 4, `runLab2Input()`, takes one report typed in the console all the way through: it is
