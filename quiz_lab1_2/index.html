@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TMPS Quiz</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #5d6676; --line: #dde1e8;
+    --accent: #4c5fd5; --code: #f0f2f5;
+    --good: #2b8a3e; --good-bg: #e7f5ea; --bad: #c92a2a; --bad-bg: #fdecec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --card: #1c2027; --text: #e6e9ef; --muted: #9aa3b2; --line: #2f3542;
+      --accent: #8193ff; --code: #12151a;
+      --good: #69db7c; --good-bg: #1c3324; --bad: #ff8787; --bad-bg: #3b2023;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  h2 { font-size: 1.3rem; margin: 0 0 12px; }
+  p { margin: 0 0 8px; }
+  .muted { color: var(--muted); }
+  button {
+    font: inherit; color: var(--text); background: var(--card); cursor: pointer;
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button.active, button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #topics { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  #progress { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .status { display: flex; justify-content: space-between; margin: 8px 0 16px; font-size: .9rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  #tag { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+  #question { font-size: 1.1rem; font-weight: 600; margin: 6px 0 14px; }
+  pre {
+    background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+    margin: 0 0 14px; overflow-x: auto; font: 13.5px/1.45 Consolas, "Courier New", monospace;
+  }
+  #options { display: grid; gap: 8px; }
+  #options button { text-align: left; padding: 10px 14px; }
+  #options button:disabled { cursor: default; color: var(--text); opacity: 1; }
+  #options button.right { background: var(--good-bg); border-color: var(--good); }
+  #options button.wrong { background: var(--bad-bg); border-color: var(--bad); }
+  .why { margin-top: 14px; padding: 12px; border-radius: 8px; }
+  .why.good { background: var(--good-bg); }
+  .why.bad { background: var(--bad-bg); }
+  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .missed { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+  .answer { color: var(--good); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>TMPS Quiz: Lab 1 and Lab 2</h1>
+  <p class="muted">SOLID principles and creational design patterns, from the course slides.
+    Press 1 to 4 to answer and Enter for the next question.</p>
+
+  <div id="topics"></div>
+  <div class="bar"><div id="progress"></div></div>
+  <div class="status muted"><span id="count"></span><span id="score"></span></div>
+
+  <section class="card" id="quiz">
+    <div id="tag"></div>
+    <p id="question"></p>
+    <pre id="code"></pre>
+    <div id="options"></div>
+    <p class="why" id="why"></p>
+    <div class="actions"><button class="primary" id="next">Next</button></div>
+  </section>
+
+  <section class="card" id="end" hidden>
+    <h2 id="result"></h2>
+    <p class="muted" id="verdict"></p>
+    <div id="missed"></div>
+    <div class="actions">
+      <button id="retryWrong">Retry the wrong ones</button>
+      <button class="primary" id="restart">Start again</button>
+    </div>
+  </section>
+</main>
+
+<script src="questions.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+
+  let list = [];    // questions of the chosen topic
+  let round = [];   // questions of this round, in random order
+  let index = 0;    // current question in the round
+  let score = 0;
+  let wrong = [];   // questions answered wrong in this round
+  let rightButton;  // the button with the correct answer
+
+  // Creates an element with some text and adds it to parent.
+  function add(parent, tag, text) {
+    const e = document.createElement(tag);
+    e.textContent = text;
+    parent.append(e);
+    return e;
+  }
+
+  // Returns a shuffled copy of the array.
+  function shuffle(items) {
+    const a = [...items];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function chooseTopic(topic, button) {
+    list = topic === "All" ? QUESTIONS : QUESTIONS.filter(q => q.topic === topic);
+    for (const b of $("topics").children) b.classList.toggle("active", b === button);
+    start(list);
+  }
+
+  function start(questions) {
+    round = shuffle(questions);
+    index = 0;
+    score = 0;
+    wrong = [];
+    show();
+  }
+
+  function show() {
+    const q = round[index];
+    $("quiz").hidden = false;
+    $("end").hidden = true;
+    $("count").textContent = `Question ${index + 1} of ${round.length}`;
+    $("score").textContent = `Score: ${score}`;
+    $("progress").style.width = `${index / round.length * 100}%`;
+    $("tag").textContent = q.topic;
+    $("question").textContent = q.text;
+    $("code").textContent = q.code || "";
+    $("code").hidden = !q.code;
+    $("why").hidden = true;
+    $("next").hidden = true;
+
+    // The first option in questions.js is the right one; show them in random order.
+    $("options").innerHTML = "";
+    shuffle(q.options).forEach((option, i) => {
+      const b = add($("options"), "button", `${i + 1}. ${option}`);
+      b.onclick = () => answer(b);
+      if (option === q.options[0]) rightButton = b;
+    });
+  }
+
+  function answer(chosen) {
+    const q = round[index];
+    const isRight = chosen === rightButton;
+    for (const b of $("options").children) b.disabled = true;
+    rightButton.classList.add("right");
+    if (isRight) score++;
+    else {
+      chosen.classList.add("wrong");
+      wrong.push(q);
+    }
+    $("score").textContent = `Score: ${score}`;
+    $("why").textContent = (isRight ? "Correct! " : "Wrong. ") + q.why;
+    $("why").className = isRight ? "why good" : "why bad";
+    $("why").hidden = false;
+    $("next").textContent = index + 1 < round.length ? "Next" : "See results";
+    $("next").hidden = false;
+    $("next").focus();
+  }
+
+  function next() {
+    index++;
+    if (index < round.length) show();
+    else finish();
+  }
+
+  function finish() {
+    $("quiz").hidden = true;
+    $("end").hidden = false;
+    $("count").textContent = "Finished";
+    $("progress").style.width = "100%";
+    $("result").textContent = `You got ${score} of ${round.length} (${Math.round(score / round.length * 100)}%)`;
+    $("verdict").textContent = wrong.length ? "Questions you missed:" : "No mistakes. Well done!";
+    $("missed").innerHTML = "";
+    for (const q of wrong) {
+      const item = add($("missed"), "div", "");
+      item.className = "missed";
+      add(item, "p", q.text);
+      if (q.code) add(item, "pre", q.code);
+      add(item, "p", "Answer: " + q.options[0]).className = "answer";
+    }
+    $("retryWrong").hidden = wrong.length === 0;
+  }
+
+  $("next").onclick = next;
+  $("restart").onclick = () => start(list);
+  $("retryWrong").onclick = () => start(wrong);
+
+  // Keys 1-4 pick an answer, Enter goes to the next question.
+  document.addEventListener("keydown", e => {
+    if ($("quiz").hidden) return;
+    const option = $("options").children[Number(e.key) - 1];
+    if (option && !option.disabled) option.click();
+    if (e.key === "Enter" && !$("next").hidden) {
+      e.preventDefault();
+      next();
+    }
+  });
+
+  for (const topic of ["All", "SOLID principles", "Creational patterns"]) {
+    const count = topic === "All" ? QUESTIONS.length : QUESTIONS.filter(q => q.topic === topic).length;
+    const b = add($("topics"), "button", `${topic} (${count})`);
+    b.onclick = () => chooseTopic(topic, b);
+  }
+  $("topics").firstChild.click();
+</script>
+</body>
+</html>
