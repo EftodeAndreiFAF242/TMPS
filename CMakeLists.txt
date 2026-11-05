@@ -5,8 +5,8 @@ project(CityReports LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Every .cpp file in Lab1/ and Lab2/ is part of the program, so a new class needs no change here.
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS Lab1/*.cpp Lab2/*.cpp)
+# Every .cpp file in the lab folders is part of the program, so a new class needs no change here.
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS Lab1/*.cpp Lab2/*.cpp Lab3/*.cpp)
 
 add_executable(tmps main.cpp ${SOURCES})
 

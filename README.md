@@ -29,18 +29,18 @@ cmake --build build
 ./build/tmps
 ```
 
-`CMakeLists.txt` finds every `.cpp` file in `Lab1/` and `Lab2/` by itself, so a new class
-needs no change in the build.
+`CMakeLists.txt` finds every `.cpp` file in the lab folders by itself, so a new class needs
+no change in the build.
 
 Without CMake, from Git Bash:
 
 ```
-g++ -std=c++17 -I. main.cpp Lab1/*/*.cpp Lab2/*/*.cpp -o tmps
+g++ -std=c++17 -I. main.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp -o tmps
 ./tmps
 ```
 
 `-I.` tells g++ that include paths start at the project folder, and `Lab1/*/*.cpp
-Lab2/*/*.cpp` compiles the code of every class together with `main.cpp`. Building only
+Lab2/*/*.cpp Lab3/*/*.cpp` compiles the code of every class together with `main.cpp`. Building only
 `main.cpp` is not enough, because the code of the methods is in the other `.cpp` files.
 PowerShell does not expand `Lab1/*/*.cpp`, so in PowerShell use CMake.
 

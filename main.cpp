@@ -32,6 +32,9 @@
 #include "Lab2/workorders/WorkOrderBuilder.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
+#include "Lab3/external/SmsGateway.h"
+#include "Lab3/notifications/SmsNotifier.h"
+
 using namespace std;
 
 // Shows a question and returns the line the user types.
@@ -300,9 +303,36 @@ void runLab2Input(ReportStorage& storage) {
     department->handle(order);
 }
 
+// Laboratory work 3: structural design patterns.
+// The reports are saved in the same storage as in lab 2, because it is one system.
+void runLab3(ReportStorage& storage) {
+    cout << "\n=== Laboratory work 3: Structural design patterns ===\n";
+
+    CategoryRule categoryRule;
+    DescriptionRule descriptionRule;
+    Validator validator;
+    validator.addRule(&categoryRule);
+    validator.addRule(&descriptionRule);
+
+    // ---- 1. Adapter: ReportService from lab 1 sends SMS through the phone company's class ----
+    cout << "\n--- 1. Adapter ---\n";
+
+    SmsGateway gateway;
+    SmsNotifier sms(&gateway, "+373 69 123 456");
+
+    cout << "ReportService from lab 1 gets an SmsNotifier, and its code stays the same:\n";
+    ReportService smsService(&storage, &validator, &sms);
+    smsService.submit(Report("Street light", "Three street lights are off on Ion Creanga St."));
+    smsService.submit(Report("Pothole", "Hole"));
+
+    cout << "A phone number that is missing makes SmsGateway return an error code:\n";
+    SmsNotifier noNumber(&gateway, "");
+    noNumber.send("This message has nowhere to go.");
+}
+
 int main() {
-    // The reports of lab 2 are kept here for the whole run of the program. main() makes the
-    // storage once and gives it to the code that needs it, so it does not have to be a singleton.
+    // The reports of labs 2 and 3 are kept here for the whole run of the program. main() makes
+    // the storage once and gives it to the code that needs it, so it does not have to be a singleton.
     ReportStorage storage;
     string choice;
 
@@ -312,6 +342,7 @@ int main() {
         cout << "2. Laboratory work 1 - SOLID principles (type your own reports)\n";
         cout << "3. Laboratory work 2 - Creational design patterns (ready example)\n";
         cout << "4. Laboratory work 2 - Creational design patterns (type your own report)\n";
+        cout << "5. Laboratory work 3 - Structural design patterns (ready example)\n";
         cout << "0. Exit\n";
         cout << "Your choice: ";
 
@@ -329,6 +360,8 @@ int main() {
             runLab2(storage);
         } else if (choice == "4") {
             runLab2Input(storage);
+        } else if (choice == "5") {
+            runLab3(storage);
         } else if (choice == "0") {
             break;
         } else {
