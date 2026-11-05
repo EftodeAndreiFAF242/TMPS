@@ -1,3 +1,5 @@
+// Lab 1 - Open/Closed Principle (OCP): runs any rules it is given, and its code never changes
+
 #pragma once
 
 #include <string>

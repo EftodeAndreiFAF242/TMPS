@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Creator, makes a GarbageCrew
+
 #pragma once
 
 #include <memory>

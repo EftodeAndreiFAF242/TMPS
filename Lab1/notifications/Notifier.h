@@ -1,3 +1,5 @@
+// Lab 1 - Dependency Inversion Principle (DIP): the abstraction
+
 #pragma once
 
 #include <string>

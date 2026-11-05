@@ -1,3 +1,5 @@
+// Lab 1 - Single Responsibility Principle (SRP): only keeps the reports
+
 #pragma once
 
 #include <vector>

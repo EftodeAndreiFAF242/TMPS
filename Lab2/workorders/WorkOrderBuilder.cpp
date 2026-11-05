@@ -1,3 +1,5 @@
+// Lab 2 - Builder: the builder, makes a WorkOrder step by step
+
 #include "Lab2/workorders/WorkOrderBuilder.h"
 
 #include "Lab1/reports/Report.h"

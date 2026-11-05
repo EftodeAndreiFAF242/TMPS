@@ -1,3 +1,5 @@
+// Lab 2 - Builder: shows the product that was built
+
 #pragma once
 
 struct WorkOrder;

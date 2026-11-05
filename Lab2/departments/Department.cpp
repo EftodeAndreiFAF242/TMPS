@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: the Creator, declares the factory method createCrew()
+
 #include "Lab2/departments/Department.h"
 
 #include <iostream>

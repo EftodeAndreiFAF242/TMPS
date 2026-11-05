@@ -1,3 +1,5 @@
+// Lab 2 - Builder: shows the product that was built
+
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
 #include <iostream>

@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Creator, makes a GarbageCrew
+
 #include "Lab2/departments/SanitationDepartment.h"
 
 #include "Lab2/crews/GarbageCrew.h"

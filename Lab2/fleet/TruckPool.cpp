@@ -1,3 +1,5 @@
+// Lab 2 - Object Pool (extra): the pool that lends the trucks and takes them back
+
 #include "Lab2/fleet/TruckPool.h"
 
 TruckPool::TruckPool(int size) {

@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Product
+
 #include "Lab2/crews/GarbageCrew.h"
 
 #include <iostream>

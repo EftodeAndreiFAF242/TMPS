@@ -1,3 +1,5 @@
+// Lab 1 - Dependency Inversion Principle (DIP): a low-level detail that implements Notifier
+
 #pragma once
 
 #include <string>

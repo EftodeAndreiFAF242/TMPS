@@ -1,3 +1,5 @@
+// Lab 1 - Single Responsibility Principle (SRP): only keeps the reports
+
 #include "Lab1/storage/ReportStorage.h"
 
 using namespace std;

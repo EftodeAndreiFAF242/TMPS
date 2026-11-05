@@ -1,3 +1,5 @@
+// Lab 1 - Open/Closed Principle (OCP): the interface every new rule plugs into
+
 #pragma once
 
 #include <string>

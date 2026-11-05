@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Product
+
 #pragma once
 
 #include "Lab2/crews/Crew.h"

@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Product (no department makes it yet)
+
 #include "Lab2/crews/GreenSpacesCrew.h"
 
 #include <iostream>

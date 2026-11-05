@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: a Concrete Creator, makes an ElectricianCrew
+
 #pragma once
 
 #include <memory>

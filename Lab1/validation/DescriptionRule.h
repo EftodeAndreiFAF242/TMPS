@@ -1,3 +1,5 @@
+// Lab 1 - Open/Closed Principle (OCP): a rule added without changing Validator
+
 #pragma once
 
 #include <string>

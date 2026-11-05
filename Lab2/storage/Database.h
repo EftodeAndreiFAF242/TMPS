@@ -1,3 +1,5 @@
+// Lab 2 - Singleton: the class that has only one instance
+
 #pragma once
 
 #include "Lab1/storage/ReportStorage.h"

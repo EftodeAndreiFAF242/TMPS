@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: the Creator, declares the factory method createCrew()
+
 #pragma once
 
 #include <memory>

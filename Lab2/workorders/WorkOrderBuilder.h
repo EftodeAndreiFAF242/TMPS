@@ -1,3 +1,5 @@
+// Lab 2 - Builder: the builder, makes a WorkOrder step by step
+
 #pragma once
 
 #include <string>

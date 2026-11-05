@@ -1,3 +1,5 @@
+// Lab 1 - Dependency Inversion Principle (DIP): the high-level module, it knows only the Notifier interface
+
 #include "Lab1/reports/ReportService.h"
 
 #include <string>

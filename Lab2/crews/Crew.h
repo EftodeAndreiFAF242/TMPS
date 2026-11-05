@@ -1,3 +1,5 @@
+// Lab 2 - Factory Method: the Product (interface)
+
 #pragma once
 
 struct WorkOrder;

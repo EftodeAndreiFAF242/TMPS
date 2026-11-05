@@ -1,3 +1,5 @@
+// Lab 2 - Object Pool (extra): the pool that lends the trucks and takes them back
+
 #pragma once
 
 #include <vector>

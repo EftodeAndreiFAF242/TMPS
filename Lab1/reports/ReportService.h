@@ -1,3 +1,5 @@
+// Lab 1 - Dependency Inversion Principle (DIP): the high-level module, it knows only the Notifier interface
+
 #pragma once
 
 struct Report;

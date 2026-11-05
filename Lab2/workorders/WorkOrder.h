@@ -1,3 +1,5 @@
+// Lab 2 - Builder: the product
+
 #pragma once
 
 #include <string>
