@@ -64,7 +64,7 @@ Lab1/               laboratory work 1: SOLID principles
   notifications/    how the citizen is told: Notifier, ConsoleNotifier, EmailNotifier
 Lab2/               laboratory work 2: creational design patterns
   README.md         the report
-  storage/          the one database of the application: Database
+  config/           the settings of the application: AppConfig
   workorders/       the task made for a report: WorkOrder, WorkOrderBuilder, WorkOrderPrinter
   departments/      the departments of city hall: Department, RoadDepartment, LightingDepartment, SanitationDepartment
   crews/            the crews that do the work: Crew, RoadCrew, ElectricianCrew, GarbageCrew, GreenSpacesCrew
@@ -96,7 +96,7 @@ Every file follows these rules:
 | A file includes everything it uses itself, and does not count on another header to bring it in | `WorkOrder.h` includes `<string>`, because `WorkOrder` has `std::string` fields |
 | Include paths start at the project folder | `#include "Lab1/reports/Report.h"` in any folder, never `"../reports/Report.h"` |
 | A header that uses a class only through a pointer or a reference declares the class instead of including its file | `struct Report;` in `WorkOrderBuilder.h`, and the full `#include` only in `WorkOrderBuilder.cpp` |
-| A class kept inside another one by value needs its full header | `Database.h` includes `Lab1/storage/ReportStorage.h`, because `Database` keeps a whole `ReportStorage` inside it |
+| A class kept inside another one by value needs its full header | `WorkOrderBuilder.h` includes `WorkOrder.h`, because `WorkOrderBuilder` keeps a whole `WorkOrder` inside it |
 | Lab 2 can use the classes of lab 1, but lab 1 never includes anything from lab 2 | `WorkOrderBuilder.cpp` includes `Lab1/reports/Report.h` |
 | Headers write `std::string` and `std::vector`, and only `.cpp` files have `using namespace std;` | a `using` in a header would reach every file that includes it |
 | The includes come in groups: the file's own header, then the standard library, then the files of the project | `ReportService.cpp` |

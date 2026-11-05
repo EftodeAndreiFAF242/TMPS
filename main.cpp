@@ -21,13 +21,13 @@
 #include "Lab1/validation/DescriptionRule.h"
 #include "Lab1/validation/Validator.h"
 
+#include "Lab2/config/AppConfig.h"
 #include "Lab2/departments/Department.h"
 #include "Lab2/departments/LightingDepartment.h"
 #include "Lab2/departments/RoadDepartment.h"
 #include "Lab2/departments/SanitationDepartment.h"
 #include "Lab2/fleet/Truck.h"
 #include "Lab2/fleet/TruckPool.h"
-#include "Lab2/storage/Database.h"
 #include "Lab2/workorders/WorkOrder.h"
 #include "Lab2/workorders/WorkOrderBuilder.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
@@ -141,19 +141,28 @@ void runLab1Input() {
     }
 }
 
-void runLab2() {
+// Laboratory work 2: creational design patterns.
+// The reports are saved in the storage that main() made, so they stay there between runs.
+void runLab2(ReportStorage& storage) {
     cout << "\n=== Laboratory work 2: Creational design patterns ===\n";
 
     cout << "\n--- 1. Singleton ---\n";
 
-    Database& first = Database::getInstance();
-    Database& second = Database::getInstance();
+    const AppConfig& first = AppConfig::getInstance();
+    const AppConfig& second = AppConfig::getInstance();
 
     if (&first == &second) {
-        cout << "Both calls returned the same database.\n";
+        cout << "Both calls returned the same settings.\n";
     } else {
-        cout << "The calls returned two different databases.\n";
+        cout << "The calls returned two different settings.\n";
     }
+
+    cout << "The settings of the application:\n";
+    cout << "  default priority: " << first.getDefaultPriority() << "\n";
+    cout << "  default deadline: " << first.getDefaultDeadlineDays() << " days\n";
+    cout << "  trucks:           " << first.getTruckCount() << "\n";
+
+    cout << "\n--- 2. Builder ---\n";
 
     CategoryRule categoryRule;
     DescriptionRule descriptionRule;
@@ -162,20 +171,12 @@ void runLab2() {
     validator.addRule(&descriptionRule);
     ConsoleNotifier notifier;
 
-    ReportService service(first.getStorage(), &validator, &notifier);
+    ReportService service(&storage, &validator, &notifier);
     service.submit(Report("Pothole", "Deep pothole in front of the school"));
     service.submit(Report("Street light", "The street light on the corner is broken"));
     service.submit(Report("Garbage", "Garbage bags left near the park entrance"));
 
-    cout << "The reports were saved through \"first\" and are read through \"second\":\n";
-    ReportPrinter printer;
-    for (const Report& report : second.getStorage()->all()) {
-        printer.print(report);
-    }
-
-    cout << "\n--- 2. Builder ---\n";
-
-    vector<Report> reports = Database::getInstance().getStorage()->all();
+    vector<Report> reports = storage.all();
     size_t last = reports.size() - 1;
 
     WorkOrder potholeOrder = WorkOrderBuilder(reports[last - 2], "Stefan cel Mare Blvd. 12")
@@ -207,8 +208,10 @@ void runLab2() {
 
     cout << "\n--- 4. Object Pool (extra) ---\n";
 
-    TruckPool pool(2);
-    cout << "City hall has 2 trucks and 3 crews that need one.\n";
+    // The number of trucks comes from the settings. "second" is the same object as "first".
+    int truckCount = second.getTruckCount();
+    TruckPool pool(truckCount);
+    cout << "City hall has " << truckCount << " trucks and 3 crews that need one.\n";
 
     Truck* roadTruck = pool.acquire();
     cout << "The road crew takes truck #" << roadTruck->number << ".\n";
@@ -229,10 +232,11 @@ void runLab2() {
          << ". It is the same truck, it was not made again.\n";
 }
 
-void runLab2Input() {
+// Laboratory work 2 with your own data: one report typed in the console goes all the way through.
+void runLab2Input(ReportStorage& storage) {
     cout << "\n=== Laboratory work 2: your own report ===\n";
 
-    Database& database = Database::getInstance();
+    const AppConfig& config = AppConfig::getInstance();
 
     CategoryRule categoryRule;
     DescriptionRule descriptionRule;
@@ -240,7 +244,7 @@ void runLab2Input() {
     validator.addRule(&categoryRule);
     validator.addRule(&descriptionRule);
     ConsoleNotifier notifier;
-    ReportService service(database.getStorage(), &validator, &notifier);
+    ReportService service(&storage, &validator, &notifier);
 
     string category = ask("Category (Pothole, Street light, Garbage): ");
     string description = ask("Description (at least 10 characters): ");
@@ -248,10 +252,10 @@ void runLab2Input() {
         return;
     }
 
-    vector<Report> reports = database.getStorage()->all();
+    vector<Report> reports = storage.all();
     const Report& report = reports.back();
 
-    cout << "Every report in the database:\n";
+    cout << "Every report in the storage:\n";
     ReportPrinter printer;
     for (const Report& saved : reports) {
         printer.print(saved);
@@ -260,17 +264,18 @@ void runLab2Input() {
     string address = ask("\nAddress: ");
     WorkOrderBuilder builder(report, address);
 
-    string priority = ask("Priority (press Enter for Normal): ");
+    string priority = ask("Priority (press Enter for " + config.getDefaultPriority() + "): ");
     if (!priority.empty()) {
         builder.setPriority(priority);
     }
 
-    string deadline = ask("Deadline in days (press Enter for 7): ");
+    string defaultDeadline = to_string(config.getDefaultDeadlineDays());
+    string deadline = ask("Deadline in days (press Enter for " + defaultDeadline + "): ");
     if (!deadline.empty()) {
         try {
             builder.setDeadline(stoi(deadline));
         } catch (...) {
-            cout << "That is not a number, so the deadline stays 7 days.\n";
+            cout << "That is not a number, so the deadline stays " << defaultDeadline << " days.\n";
         }
     }
 
@@ -296,6 +301,9 @@ void runLab2Input() {
 }
 
 int main() {
+    // The reports of lab 2 are kept here for the whole run of the program. main() makes the
+    // storage once and gives it to the code that needs it, so it does not have to be a singleton.
+    ReportStorage storage;
     string choice;
 
     while (true) {
@@ -318,9 +326,9 @@ int main() {
         } else if (choice == "2") {
             runLab1Input();
         } else if (choice == "3") {
-            runLab2();
+            runLab2(storage);
         } else if (choice == "4") {
-            runLab2Input();
+            runLab2Input(storage);
         } else if (choice == "0") {
             break;
         } else {

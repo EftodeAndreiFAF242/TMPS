@@ -46,8 +46,8 @@ Circle b(5);   // object b, radius 5
 `Circle a(1);    // a is an instance of Circle
 Circle b(5);    // b is another instance of Circle
 
-Database& x = Database::getInstance();
-Database& y = Database::getInstance();
+const AppConfig& x = AppConfig::getInstance();
+const AppConfig& y = AppConfig::getInstance();
 // Singleton: x and y are the SAME instance`,
       },
       {
@@ -322,10 +322,10 @@ public:
         word: "Client",
         text: "The code that uses a class or an interface. In the diagrams, Client is the code that asks for new objects, for example by calling prototype->Clone() or by using an AbstractFactory.",
         code:
-`// main() is a client of Database: it uses it
+`// main() is a client of AppConfig: it uses it
 int main() {
-    Database& db = Database::getInstance();
-    db.getStorage();
+    const AppConfig& config = AppConfig::getInstance();
+    config.getTruckCount();
 }`,
       },
       {
@@ -560,7 +560,7 @@ public:
         text: "A known, reusable solution to a problem that appears often in software design. It is a plan for how to organize classes, not ready code you copy.",
         code:
 `Problem:  "The program needs exactly
-           one Database."
+           one set of settings."
 Pattern:  Singleton
 Solution: private constructor
           + static instance
@@ -624,10 +624,10 @@ Logger* b = Logger::getInstance();   // a == b, the same object`,
       },
       {
         word: "Thread (thread safe)",
-        text: "A thread is one line of execution; a program can run several threads at the same time. Thread safe code works correctly even when several threads use it at once. Since C++11, a static local variable is created only once even with many threads, which is how your Lab 2 Database does it:",
+        text: "A thread is one line of execution; a program can run several threads at the same time. Thread safe code works correctly even when several threads use it at once. Since C++11, a static local variable is created only once even with many threads, which is how your Lab 2 AppConfig does it:",
         code:
-`Database& Database::getInstance() {
-    static Database instance;   // created once, thread safe (C++11)
+`const AppConfig& AppConfig::getInstance() {
+    static AppConfig instance;   // created once, thread safe (C++11)
     return instance;
 }`,
       },

@@ -23,7 +23,7 @@ methods. The interface `Crew` and the struct `WorkOrder` have only a `.h`.
 
 | Pattern | Classes | Where they are | What it decides about making objects |
 | --- | --- | --- | --- |
-| Singleton | `Database` | [storage/](storage/) | there is only one database |
+| Singleton | `AppConfig` | [config/](config/) | there is only one set of settings |
 | Builder | `WorkOrder`, `WorkOrderBuilder`, `WorkOrderPrinter` | [workorders/](workorders/) | a work order is made step by step |
 | Factory Method | `Department` and 3 departments, `Crew` and its crews | [departments/](departments/), [crews/](crews/) | each department chooses which crew it makes |
 | Object Pool (extra) | `Truck`, `TruckPool` | [fleet/](fleet/) | trucks are made once and reused |
@@ -34,61 +34,98 @@ methods is in the `.cpp` file.
 
 The ready example is the function `runLab2()` in [main.cpp](../main.cpp) (menu option 3).
 Option 4, `runLab2Input()`, takes one report typed in the console all the way through: it is
-saved in the database, the user gives the parts of the work order (and can skip the optional
+saved in the storage, the user gives the parts of the work order (and can skip the optional
 ones), and the department for its category sends a crew.
 
 ## 1. Singleton
 
 > A class has only one object, and the whole program reaches it from one place.
 
-Every report has to be kept in one place. If two parts of the program each made their
-own `ReportStorage`, a report saved by one part would be missing in the other. So the
-storage lives inside `Database`, and the program can't make a second `Database`.
+The application has settings: the priority and the deadline a work order gets when nobody
+gives them, and how many trucks city hall has. There must be only one set of settings. If
+two parts of the program each had their own copy, they could disagree, for example one part
+could think city hall has 2 trucks and another one 3. So the settings live in `AppConfig`,
+and the program can't make a second `AppConfig`.
 
 ```cpp
-class Database {
+class AppConfig {
 public:
-    static Database& getInstance() {
-        static Database instance;   // made at the first call, then the same object every time
+    static const AppConfig& getInstance() {
+        static AppConfig instance;   // made at the first call, then the same object every time
         return instance;
     }
 
-    Database(const Database&) = delete;              // no copies
-    Database& operator=(const Database&) = delete;
+    AppConfig(const AppConfig&) = delete;              // no copies
+    AppConfig& operator=(const AppConfig&) = delete;
 
-    ReportStorage* getStorage() { return &storage; }
+    const string& getDefaultPriority() const;   // "Normal"
+    int getDefaultDeadlineDays() const;         // 7
+    int getTruckCount() const;                  // 2
 
 private:
-    Database() { ... }   // private: only getInstance() can make a Database
-    ReportStorage storage;
+    AppConfig() { ... }   // private: only getInstance() can make an AppConfig
+    string defaultPriority;
+    int defaultDeadlineDays;
+    int truckCount;
 };
 ```
 
-Three things together make sure there is only one database:
+Three things together make sure there is only one set of settings:
 
 | In the code | What it stops |
 | --- | --- |
-| private constructor | `Database db;` written anywhere outside the class does not compile |
-| `= delete` on the copy | `Database copy = Database::getInstance();` does not compile |
-| `static Database instance;` | `getInstance()` makes the object only at the first call and returns it after that |
+| private constructor | `AppConfig config;` written anywhere outside the class does not compile |
+| `= delete` on the copy | `AppConfig copy = AppConfig::getInstance();` does not compile |
+| `static AppConfig instance;` | `getInstance()` makes the object only at the first call and returns it after that |
 
-The database is made the first time someone asks for it, not when the program starts.
+The settings are made the first time someone asks for them, not when the program starts.
 The C++ standard also guarantees that two threads calling `getInstance()` at the same
-moment still get only one database.
+moment still get only one `AppConfig`.
 
-The demo asks for the database twice, as `first` and `second`. The message
-`The database was created.` appears once, and the two have the same address in memory.
-The reports are saved through `first` and read through `second`. Running lab 2 a second
-time from the menu shows the same thing: the database is not made again, and the reports
-from the first run are still in it.
+`getInstance()` returns a `const` reference and the class has only getters, so nobody can
+change the settings after they are made. That is why it is safe to read them from anywhere:
+`main.cpp` reads the number of trucks, and `WorkOrderBuilder` reads the default priority and
+deadline. A singleton that anybody could change would be a global variable, and a change
+made in one place could break another.
 
-A singleton can be reached from anywhere, which hides who uses it. To keep the Dependency
-Inversion from lab 1, only `main.cpp` calls `getInstance()`. `ReportService` still gets
-its storage from outside, through its constructor:
+The demo asks for the settings twice, as `first` and `second`. The message
+`The settings were loaded.` appears once, and the two have the same address in memory.
+Running lab 2 a second time from the menu shows the same thing: the settings are not made
+again.
+
+For now the values are written in the constructor. Later they can be read from a file, and
+only the constructor of `AppConfig` will change.
+
+### Why the database is not a singleton
+
+In the first version the singleton was a `Database` that kept the reports. A database is a
+bad fit for a singleton:
+
+- a real application can need more than one database, for example a test database next to
+  the real one, while it always has exactly one set of settings;
+- the reports change all the time, and when anybody can reach shared data from anywhere and
+  change it, it is hard to know who changed it. The settings are only read, so this problem
+  does not exist for them.
+
+Now the reports are kept in a normal `ReportStorage` from lab 1. `main()` makes it once and
+gives it to the functions that need it, the same way `ReportService` gets its storage
+through its constructor (the Dependency Inversion from lab 1):
 
 ```cpp
-ReportService service(first.getStorage(), &validator, &notifier);
+int main() {
+    ReportStorage storage;   // one storage for the whole run of the program
+    ...
+    runLab2(storage);
+}
+
+void runLab2(ReportStorage& storage) {
+    ReportService service(&storage, &validator, &notifier);
+    ...
+}
 ```
+
+There is still only one storage, and the reports from the first run of lab 2 are still in
+it the second time, but now the code that uses it shows where it comes from.
 
 ## 2. Builder
 
@@ -102,8 +139,8 @@ struct WorkOrder {
     int reportId = 0;
     string problem;
     string address;
-    string priority = "Normal";
-    int deadlineDays = 7;
+    string priority;
+    int deadlineDays = 0;
     string note;
 };
 ```
@@ -132,8 +169,22 @@ WorkOrder potholeOrder = WorkOrderBuilder(reports[0], "Stefan cel Mare Blvd. 12"
 WorkOrder garbageOrder = WorkOrderBuilder(reports[2], "Valea Morilor park").build();
 ```
 
-Every value has a name next to it, and the parts that are not given keep their default
-values. The calls can follow each other because every method returns the builder itself:
+Every value has a name next to it. The parts that are not given keep the default values
+that the builder takes from the settings when it is made:
+
+```cpp
+WorkOrderBuilder(const Report& report, const string& address) {
+    order.reportId = report.id;
+    order.problem = report.category;
+    order.address = address;
+
+    const AppConfig& config = AppConfig::getInstance();
+    order.priority = config.getDefaultPriority();          // "Normal"
+    order.deadlineDays = config.getDefaultDeadlineDays();  // 7
+}
+```
+
+The calls can follow each other because every method returns the builder itself:
 
 ```cpp
 WorkOrderBuilder& setPriority(const string& priority) {
@@ -214,7 +265,8 @@ private:
 };
 ```
 
-In the demo, the pool has 2 trucks and 3 crews need one. The third crew gets `nullptr`
+In the demo, the pool has 2 trucks (the number comes from the settings) and 3 crews need
+one. The third crew gets `nullptr`
 and waits. When the road crew gives truck #1 back, the garbage crew gets truck #1, the
 same object, which was not made again.
 
@@ -227,17 +279,17 @@ few of, like connections to a database.
 === Laboratory work 2: Creational design patterns ===
 
 --- 1. Singleton ---
-[database] The database was created.
-Both calls returned the same database.
+[config] The settings were loaded.
+Both calls returned the same settings.
+The settings of the application:
+  default priority: Normal
+  default deadline: 7 days
+  trucks:           2
+
+--- 2. Builder ---
 [console] Report #1 was registered.
 [console] Report #2 was registered.
 [console] Report #3 was registered.
-The reports were saved through "first" and are read through "second":
-#1 [Pothole] Deep pothole in front of the school
-#2 [Street light] The street light on the corner is broken
-#3 [Garbage] Garbage bags left near the park entrance
-
---- 2. Builder ---
 Work order for report #1 (Pothole)
   address:  Stefan cel Mare Blvd. 12
   priority: High
@@ -272,13 +324,15 @@ In this laboratory work I learned that creational patterns answer a simple quest
 makes an object, when, and how many of them. Before, the objects in my project were made
 wherever they were needed. Now each of these decisions has its own place in the code.
 
-The Singleton makes sure the whole program uses one database. Without it, two parts of the
-program could each keep their own list of reports, and a report saved in one place would
-be missing in the other.
+The Singleton makes sure the whole program uses one set of settings. Without it, two parts
+of the program could each have their own copy, and they could disagree about the default
+deadline or the number of trucks. At first I used the singleton for the database, but the
+reports change all the time and a real application can need more than one database, so
+now the storage is made once in `main()` and given to the code that needs it.
 
 The Builder made work orders easy to create. A work order has many parts and most of them
 are optional, so instead of one long constructor where the values are easy to mix up, each
-part is set by its name and the others keep their default values.
+part is set by its name and the others get their default values from the settings.
 
 The Factory Method lets every department choose its own kind of crew, while the steps for
 handling a work order are written only once. A new department is just one new class, and
@@ -291,8 +345,8 @@ I did not use Prototype and Abstract Factory, because the project does not need 
 there are no objects that have to be copied and no families of related objects.
 
 The classes from lab 1 worked with the new code without any changes. The report service
-could use the database's storage right away, because in lab 1 it was written to receive its
-storage from outside. That showed me the SOLID principles from the first lab were worth it.
+could use the storage that `main()` gives it right away, because in lab 1 it was written to
+receive its storage from outside. That showed me the SOLID principles from the first lab were worth it.
 
 ## C++ used in the code
 
@@ -300,14 +354,15 @@ New things compared to lab 1:
 
 | In the code | What it means |
 | --- | --- |
-| `static Database& getInstance()` | a static method: it belongs to the class, so it is called as `Database::getInstance()`, without an object |
-| `static Database instance;` inside a function | made the first time the function runs, and it stays alive until the program ends |
-| `Database&` | a reference: the object itself, not a copy of it |
-| `Database(const Database&) = delete;` | `= delete` forbids this method. This one is the copy constructor, so copying a `Database` does not compile |
-| `Database& operator=(const Database&) = delete;` | forbids assigning one `Database` to another with `=` |
+| `static const AppConfig& getInstance()` | a static method: it belongs to the class, so it is called as `AppConfig::getInstance()`, without an object |
+| `static AppConfig instance;` inside a function | made the first time the function runs, and it stays alive until the program ends |
+| `const AppConfig&` | a reference: the object itself, not a copy of it. `const` means it can only be read, so nobody can change the settings |
+| `AppConfig(const AppConfig&) = delete;` | `= delete` forbids this method. This one is the copy constructor, so copying an `AppConfig` does not compile |
+| `AppConfig& operator=(const AppConfig&) = delete;` | forbids assigning one `AppConfig` to another with `=` |
 | constructor under `private:` | only the code of the class itself can make an object |
 | `&first == &second` | compares two addresses. The same address means the same object |
-| `string priority = "Normal";` | a field with a default value |
+| `ReportStorage& storage` as a parameter | the function works on the storage it was given, not on a copy of it |
+| `int reportId = 0;` | a field with a default value |
 | `const string& priority` | the text is passed by reference, so it is not copied, and `const` means the method can't change it |
 | `WorkOrder build() const` | a `const` method: it does not change the object it is called on |
 | `return *this;` | `this` points to the current object, and `*this` is the object itself |
