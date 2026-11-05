@@ -33,6 +33,8 @@
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
 #include "Lab3/external/SmsGateway.h"
+#include "Lab3/notifications/ArchivedNotifier.h"
+#include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/notifications/SmsNotifier.h"
 
 using namespace std;
@@ -328,6 +330,26 @@ void runLab3(ReportStorage& storage) {
     cout << "A phone number that is missing makes SmsGateway return an error code:\n";
     SmsNotifier noNumber(&gateway, "");
     noNumber.send("This message has nowhere to go.");
+
+    // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
+    cout << "\n--- 2. Decorator ---\n";
+
+    SignedNotifier signedSms(&sms);
+    ArchivedNotifier archivedSms(&signedSms);
+
+    cout << "The SMS notifier, wrapped so every message is signed and kept in the archive:\n";
+    ReportService decoratedService(&storage, &validator, &archivedSms);
+    decoratedService.submit(Report("Garbage", "The garbage bins on Puskin St. are full"));
+
+    cout << "The same signature works on any notifier, for example on e-mail:\n";
+    EmailNotifier email;
+    SignedNotifier signedEmail(&email);
+    signedEmail.send("The street lights on Ion Creanga St. were repaired.");
+
+    cout << "The archive kept " << archivedSms.getHistory().size() << " message(s):\n";
+    for (const string& message : archivedSms.getHistory()) {
+        cout << "  - " << message << "\n";
+    }
 }
 
 int main() {
