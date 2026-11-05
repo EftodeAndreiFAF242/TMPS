@@ -36,6 +36,7 @@
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/notifications/SmsNotifier.h"
+#include "Lab3/services/CityHall.h"
 
 using namespace std;
 
@@ -350,6 +351,75 @@ void runLab3(ReportStorage& storage) {
     for (const string& message : archivedSms.getHistory()) {
         cout << "  - " << message << "\n";
     }
+
+    // ---- 3. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    cout << "\n--- 3. Facade ---\n";
+
+    // City hall gets the signed and archived SMS notifier, so the three patterns work together.
+    CityHall cityHall(&storage, &archivedSms);
+
+    cout << "An urgent pothole, reported with one call:\n";
+    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
+
+    cout << "\nA broken street light that is not urgent:\n";
+    cityHall.reportProblem("Street light", "The street light near the school is blinking",
+                           "Mihai Viteazul St. 7", false);
+
+    cout << "\nA report that is refused does not get a work order:\n";
+    cityHall.reportProblem("Aliens", "Help", "Nowhere", false);
+
+    cout << "\nEvery message city hall sent by SMS in this example:\n";
+    for (const string& message : archivedSms.getHistory()) {
+        cout << "  - " << message << "\n";
+    }
+}
+
+// Laboratory work 3 with your own data: the reports typed in the console go through city hall.
+void runLab3Input(ReportStorage& storage) {
+    cout << "\n=== Laboratory work 3: your own reports ===\n";
+
+    // Adapter: SMS is one more way to tell the citizen.
+    ConsoleNotifier consoleNotifier;
+    EmailNotifier emailNotifier;
+    SmsGateway gateway;
+
+    string channel = ask("How should the citizen be told? 1 - console, 2 - e-mail, 3 - SMS: ");
+    string phoneNumber;
+    if (channel == "3") {
+        phoneNumber = ask("Phone number: ");
+    }
+    SmsNotifier smsNotifier(&gateway, phoneNumber);
+
+    Notifier* notifier = &consoleNotifier;
+    if (channel == "2") {
+        notifier = &emailNotifier;
+    } else if (channel == "3") {
+        notifier = &smsNotifier;
+    }
+
+    // Decorator: whatever the channel is, every message is signed and archived.
+    SignedNotifier signedNotifier(notifier);
+    ArchivedNotifier archivedNotifier(&signedNotifier);
+
+    // Facade: from here on, main only talks to city hall.
+    CityHall cityHall(&storage, &archivedNotifier);
+
+    cout << "Known categories: Pothole, Street light, Garbage. A description needs at least 10 characters.\n";
+    while (true) {
+        string category = ask("\nCategory (or press Enter to stop): ");
+        if (category == "") {
+            break;
+        }
+        string description = ask("Description: ");
+        string address = ask("Address: ");
+        bool urgent = ask("Is it urgent? (y/n): ") == "y";
+        cityHall.reportProblem(category, description, address, urgent);
+    }
+
+    cout << "\nEvery message city hall sent:\n";
+    for (const string& message : archivedNotifier.getHistory()) {
+        cout << "  - " << message << "\n";
+    }
 }
 
 int main() {
@@ -365,6 +435,7 @@ int main() {
         cout << "3. Laboratory work 2 - Creational design patterns (ready example)\n";
         cout << "4. Laboratory work 2 - Creational design patterns (type your own report)\n";
         cout << "5. Laboratory work 3 - Structural design patterns (ready example)\n";
+        cout << "6. Laboratory work 3 - Structural design patterns (type your own reports)\n";
         cout << "0. Exit\n";
         cout << "Your choice: ";
 
@@ -384,6 +455,8 @@ int main() {
             runLab2Input(storage);
         } else if (choice == "5") {
             runLab3(storage);
+        } else if (choice == "6") {
+            runLab3Input(storage);
         } else if (choice == "0") {
             break;
         } else {
