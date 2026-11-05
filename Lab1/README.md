@@ -14,14 +14,14 @@ The application takes reports about city problems. At this stage it does three t
 with a report: it checks it, it saves it, and it tells the citizen what happened. This is
 the base the next laboratory works build on.
 
-Each principle has its own pair of files: the `.h` declares the classes and the `.cpp` has
-the code of their methods.
+Every class has its own pair of files, named after the class: the `.h` declares it and the
+`.cpp` has the code of its methods. The interfaces `Rule` and `Notifier` have only a `.h`.
 
-| Files | Principle | Classes in it |
+| Principle | Classes | Where they are |
 | --- | --- | --- |
-| [SingleResponsibility.h](SingleResponsibility.h), [SingleResponsibility.cpp](SingleResponsibility.cpp) | Single Responsibility (SRP) | `Report`, `ReportStorage`, `ReportPrinter` |
-| [OpenClosed.h](OpenClosed.h), [OpenClosed.cpp](OpenClosed.cpp) | Open/Closed (OCP) | `Rule`, `CategoryRule`, `DescriptionRule`, `Validator` |
-| [DependencyInversion.h](DependencyInversion.h), [DependencyInversion.cpp](DependencyInversion.cpp) | Dependency Inversion (DIP) | `Notifier`, `ConsoleNotifier`, `EmailNotifier`, `ReportService` |
+| Single Responsibility (SRP) | `Report`, `ReportStorage`, `ReportPrinter` | [reports/](reports/), [storage/](storage/) |
+| Open/Closed (OCP) | `Rule`, `CategoryRule`, `DescriptionRule`, `Validator` | [validation/](validation/) |
+| Dependency Inversion (DIP) | `Notifier`, `ConsoleNotifier`, `EmailNotifier`, `ReportService` | [notifications/](notifications/), [reports/](reports/) |
 
 The code snippets below show a class and the code of its methods together, so they can be
 read in one place. In the project, the class is in the `.h` file and the code of its

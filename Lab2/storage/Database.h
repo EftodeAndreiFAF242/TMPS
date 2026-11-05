@@ -1,12 +1,9 @@
-//A class that should have only one instance at any time.
-//It contains static encapsulated instance.
-//The constructor should be private.
-//It must be made thread safe.
-
 #pragma once
 
-#include "Lab1/SingleResponsibility.h"
+#include "Lab1/storage/ReportStorage.h"
 
+// The one database of the application. It is made the first time someone asks for it,
+// and every later call returns the same object.
 class Database {
 public:
     static Database& getInstance();

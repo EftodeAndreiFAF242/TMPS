@@ -17,15 +17,16 @@ hall handles them. Lab 2 adds the next step. After a report is accepted, city ha
 a work order for it, and the department in charge sends a repair crew.
 
 Lab 2 uses the classes from lab 1 (`Report`, `ReportStorage`, `Validator`,
-`ReportService`, `ConsoleNotifier`) and does not change them. Each pattern has its own
-pair of files: the `.h` declares the classes and the `.cpp` has the code of their methods.
+`ReportService`, `ConsoleNotifier`) and does not change them. Every class has its own pair
+of files, named after the class: the `.h` declares it and the `.cpp` has the code of its
+methods. The interface `Crew` and the struct `WorkOrder` have only a `.h`.
 
-| Files | Pattern | Classes in it | What it decides about making objects |
+| Pattern | Classes | Where they are | What it decides about making objects |
 | --- | --- | --- | --- |
-| [Singleton.h](Singleton.h), [Singleton.cpp](Singleton.cpp) | Singleton | `Database` | there is only one database |
-| [Builder.h](Builder.h), [Builder.cpp](Builder.cpp) | Builder | `WorkOrder`, `WorkOrderBuilder`, `WorkOrderPrinter` | a work order is made step by step |
-| [FactoryMethod.h](FactoryMethod.h), [FactoryMethod.cpp](FactoryMethod.cpp) | Factory Method | `Crew` and 3 crews, `Department` and 3 departments | each department chooses which crew it makes |
-| [ObjectPool.h](ObjectPool.h), [ObjectPool.cpp](ObjectPool.cpp) | Object Pool (extra) | `Truck`, `TruckPool` | trucks are made once and reused |
+| Singleton | `Database` | [storage/](storage/) | there is only one database |
+| Builder | `WorkOrder`, `WorkOrderBuilder`, `WorkOrderPrinter` | [workorders/](workorders/) | a work order is made step by step |
+| Factory Method | `Department` and 3 departments, `Crew` and its crews | [departments/](departments/), [crews/](crews/) | each department chooses which crew it makes |
+| Object Pool (extra) | `Truck`, `TruckPool` | [fleet/](fleet/) | trucks are made once and reused |
 
 The code snippets below show a class and the code of its methods together, so they can be
 read in one place. In the project, the class is in the `.h` file and the code of its
@@ -267,17 +268,31 @@ The garbage crew takes truck #1. It is the same truck, it was not made again.
 
 ## Conclusions
 
-Each pattern moves the decision about making an object to one place:
+In this laboratory work I learned that creational patterns answer a simple question: who
+makes an object, when, and how many of them. Before, the objects in my project were made
+wherever they were needed. Now each of these decisions has its own place in the code.
 
-- Singleton put the decision "how many databases" inside `Database`, so the program can't
-  end up with two storages.
-- Builder made a work order with many optional parts easy to read and hard to get wrong.
-- Factory Method let each department choose its crew, while the steps of handling a work
-  order are written once.
-- Object Pool (extra) reused a few trucks instead of making a new one for every job.
+The Singleton makes sure the whole program uses one database. Without it, two parts of the
+program could each keep their own list of reports, and a report saved in one place would
+be missing in the other.
 
-The lab 1 classes were used without any change. `ReportService` works with the
-singleton's storage because it was written to receive its storage from outside.
+The Builder made work orders easy to create. A work order has many parts and most of them
+are optional, so instead of one long constructor where the values are easy to mix up, each
+part is set by its name and the others keep their default values.
+
+The Factory Method lets every department choose its own kind of crew, while the steps for
+handling a work order are written only once. A new department is just one new class, and
+the old code stays the same.
+
+As an extra, I tried the Object Pool with the city trucks. The trucks are made once and
+passed from one crew to the next, instead of making a new truck for every job.
+
+I did not use Prototype and Abstract Factory, because the project does not need them yet:
+there are no objects that have to be copied and no families of related objects.
+
+The classes from lab 1 worked with the new code without any changes. The report service
+could use the database's storage right away, because in lab 1 it was written to receive its
+storage from outside. That showed me the SOLID principles from the first lab were worth it.
 
 ## C++ used in the code
 

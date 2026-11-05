@@ -1,8 +1,6 @@
-#include "Lab2/Builder.h"
+#include "Lab2/workorders/WorkOrderBuilder.h"
 
-#include <iostream>
-
-#include "Lab1/SingleResponsibility.h"
+#include "Lab1/reports/Report.h"
 
 using namespace std;
 
@@ -29,14 +27,4 @@ WorkOrderBuilder& WorkOrderBuilder::setNote(const string& note) {
 
 WorkOrder WorkOrderBuilder::build() const {
     return order;
-}
-
-void WorkOrderPrinter::print(const WorkOrder& order) const {
-    cout << "Work order for report #" << order.reportId << " (" << order.problem << ")\n";
-    cout << "  address:  " << order.address << "\n";
-    cout << "  priority: " << order.priority << "\n";
-    cout << "  deadline: " << order.deadlineDays << " days\n";
-    if (!order.note.empty()) {
-        cout << "  note:     " << order.note << "\n";
-    }
 }

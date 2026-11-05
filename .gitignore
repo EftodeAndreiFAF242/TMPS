@@ -1,6 +1,7 @@
 # The compiled program
 *.exe
 /tmps
+/build/
 
 # Editor settings
 /.vscode/

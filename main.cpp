@@ -4,20 +4,33 @@
 // the ready example, where the data is already written in the code,
 // or with their own data, typed in the console.
 //
-// Build:  g++ -I. main.cpp Lab1/*.cpp Lab2/*.cpp -o tmps
-// Run:    ./tmps
+// Build and run: see README.md.
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "Lab1/DependencyInversion.h"
-#include "Lab1/OpenClosed.h"
-#include "Lab1/SingleResponsibility.h"
-#include "Lab2/Builder.h"
-#include "Lab2/FactoryMethod.h"
-#include "Lab2/ObjectPool.h"
-#include "Lab2/Singleton.h"
+#include "Lab1/notifications/ConsoleNotifier.h"
+#include "Lab1/notifications/EmailNotifier.h"
+#include "Lab1/notifications/Notifier.h"
+#include "Lab1/reports/Report.h"
+#include "Lab1/reports/ReportPrinter.h"
+#include "Lab1/reports/ReportService.h"
+#include "Lab1/storage/ReportStorage.h"
+#include "Lab1/validation/CategoryRule.h"
+#include "Lab1/validation/DescriptionRule.h"
+#include "Lab1/validation/Validator.h"
+
+#include "Lab2/departments/Department.h"
+#include "Lab2/departments/LightingDepartment.h"
+#include "Lab2/departments/RoadDepartment.h"
+#include "Lab2/departments/SanitationDepartment.h"
+#include "Lab2/fleet/Truck.h"
+#include "Lab2/fleet/TruckPool.h"
+#include "Lab2/storage/Database.h"
+#include "Lab2/workorders/WorkOrder.h"
+#include "Lab2/workorders/WorkOrderBuilder.h"
+#include "Lab2/workorders/WorkOrderPrinter.h"
 
 using namespace std;
 

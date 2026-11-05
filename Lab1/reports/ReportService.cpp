@@ -1,20 +1,14 @@
-#include "Lab1/DependencyInversion.h"
+#include "Lab1/reports/ReportService.h"
 
-#include <iostream>
+#include <string>
 #include <vector>
 
-#include "Lab1/OpenClosed.h"
-#include "Lab1/SingleResponsibility.h"
+#include "Lab1/notifications/Notifier.h"
+#include "Lab1/reports/Report.h"
+#include "Lab1/storage/ReportStorage.h"
+#include "Lab1/validation/Validator.h"
 
 using namespace std;
-
-void ConsoleNotifier::send(const string& message) {
-    cout << "[console] " << message << "\n";
-}
-
-void EmailNotifier::send(const string& message) {
-    cout << "[e-mail] " << message << "\n";
-}
 
 ReportService::ReportService(ReportStorage* storage, Validator* validator, Notifier* notifier) {
     this->storage = storage;

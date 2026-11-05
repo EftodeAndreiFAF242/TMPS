@@ -1,6 +1,4 @@
-#include "Lab2/ObjectPool.h"
-
-Truck::Truck(int number) : number(number) {}
+#include "Lab2/fleet/TruckPool.h"
 
 TruckPool::TruckPool(int size) {
     trucks.reserve(size);

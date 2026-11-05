@@ -1,8 +1,11 @@
-#include "Lab2/Singleton.h"
+#include "Lab2/storage/Database.h"
 
 #include <iostream>
 
 using namespace std;
+
+// TODO (teacher feedback): the singleton should not be the database.
+// Use it for the configuration of the application instead.
 
 Database& Database::getInstance() {
     static Database instance;
