@@ -18,6 +18,7 @@ named after the class.
 | --- | --- | --- |
 | 1 | SOLID principles | [Lab1](Lab1/) |
 | 2 | Creational design patterns | [Lab2](Lab2/) |
+| 3 | Structural design patterns | [Lab3](Lab3/) |
 
 ## How to run
 
@@ -69,6 +70,11 @@ Lab2/               laboratory work 2: creational design patterns
   departments/      the departments of city hall: Department, RoadDepartment, LightingDepartment, SanitationDepartment
   crews/            the crews that do the work: Crew, RoadCrew, ElectricianCrew, GarbageCrew, GreenSpacesCrew
   fleet/            the trucks of city hall: Truck, TruckPool
+Lab3/               laboratory work 3: structural design patterns
+  README.md         the report
+  external/         the class that comes from the phone company: SmsGateway
+  notifications/    more ways to tell the citizen: SmsNotifier, NotifierDecorator, SignedNotifier, ArchivedNotifier
+  services/         one entry point for the whole system: CityHall
 quiz_lab1_2/        a quiz to study for labs 1 and 2
 ```
 
@@ -97,7 +103,7 @@ Every file follows these rules:
 | Include paths start at the project folder | `#include "Lab1/reports/Report.h"` in any folder, never `"../reports/Report.h"` |
 | A header that uses a class only through a pointer or a reference declares the class instead of including its file | `struct Report;` in `WorkOrderBuilder.h`, and the full `#include` only in `WorkOrderBuilder.cpp` |
 | A class kept inside another one by value needs its full header | `WorkOrderBuilder.h` includes `WorkOrder.h`, because `WorkOrderBuilder` keeps a whole `WorkOrder` inside it |
-| Lab 2 can use the classes of lab 1, but lab 1 never includes anything from lab 2 | `WorkOrderBuilder.cpp` includes `Lab1/reports/Report.h` |
+| A lab can use the classes of the labs before it, but never the ones after it | `WorkOrderBuilder.cpp` (lab 2) includes `Lab1/reports/Report.h`, and nothing in `Lab1/` or `Lab2/` includes `Lab3/` |
 | Headers write `std::string` and `std::vector`, and only `.cpp` files have `using namespace std;` | a `using` in a header would reach every file that includes it |
 | The includes come in groups: the file's own header, then the standard library, then the files of the project | `ReportService.cpp` |
 | Every header starts with `#pragma once` | a header included twice is read only once |
