@@ -2,19 +2,17 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 
 #include "Lab1/reports/ReportService.h"
 #include "Lab1/validation/CategoryRule.h"
 #include "Lab1/validation/DescriptionRule.h"
 #include "Lab1/validation/Validator.h"
-#include "Lab2/departments/Department.h"
-#include "Lab2/departments/LightingDepartment.h"
-#include "Lab2/departments/RoadDepartment.h"
-#include "Lab2/departments/SanitationDepartment.h"
 #include "Lab2/fleet/TruckPool.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
+class Department;
 class Notifier;
 class ReportStorage;
 
@@ -23,25 +21,24 @@ class ReportStorage;
 // not have to know the classes of lab 1 and lab 2 or the order they are used in.
 class CityHall {
 public:
-    // City hall gets the storage and the way citizens are told, and makes everything else itself.
+    // City hall gets the storage and the way citizens are told, and makes the rest itself.
     CityHall(ReportStorage* storage, Notifier* notifier);
+
+    // Tells city hall which department takes care of a category. A new department is a new
+    // class and one more call to this method, and the code of CityHall stays the same.
+    void addDepartment(const std::string& category, const Department* department);
 
     // Handles a problem from start to end. Returns false if the report was refused.
     bool reportProblem(const std::string& category, const std::string& description,
                        const std::string& address, bool urgent);
 
 private:
-    // The department that takes care of a category.
-    const Department& departmentFor(const std::string& category) const;
-
     ReportStorage* storage;
     CategoryRule categoryRule;
     DescriptionRule descriptionRule;
     Validator validator;
     ReportService reportService;
-    RoadDepartment roads;
-    LightingDepartment lighting;
-    SanitationDepartment sanitation;
+    std::map<std::string, const Department*> departments;  // the category and its department
     TruckPool trucks;
     WorkOrderPrinter orderPrinter;
 };

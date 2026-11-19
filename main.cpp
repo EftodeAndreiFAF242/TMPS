@@ -356,6 +356,15 @@ void runLab3(ReportStorage& storage) {
     // City hall gets the signed and archived letter notifier, so the three patterns work together.
     CityHall cityHall(&storage, &archivedLetters);
 
+    // main tells city hall which department takes care of which category. A new department is
+    // one more class and one more line here, and the code of CityHall does not change.
+    RoadDepartment roads;
+    LightingDepartment lighting;
+    SanitationDepartment sanitation;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.addDepartment("Street light", &lighting);
+    cityHall.addDepartment("Garbage", &sanitation);
+
     cout << "An urgent pothole, reported with one call:\n";
     cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
 
@@ -401,6 +410,12 @@ void runLab3Input(ReportStorage& storage) {
 
     // Facade: from here on, main only talks to city hall.
     CityHall cityHall(&storage, &archivedNotifier);
+    RoadDepartment roads;
+    LightingDepartment lighting;
+    SanitationDepartment sanitation;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.addDepartment("Street light", &lighting);
+    cityHall.addDepartment("Garbage", &sanitation);
 
     cout << "Known categories: Pothole, Street light, Garbage. A description needs at least 10 characters.\n";
     while (true) {
