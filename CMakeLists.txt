@@ -16,3 +16,10 @@ target_include_directories(tmps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(tmps PRIVATE -Wall -Wextra)
 endif()
+
+# The unit tests of laboratory work 3: a separate program, built from the same classes without main.cpp.
+add_executable(lab3_tests tests/Lab3Tests.cpp ${SOURCES})
+target_include_directories(lab3_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+enable_testing()
+add_test(NAME lab3_tests COMMAND lab3_tests)

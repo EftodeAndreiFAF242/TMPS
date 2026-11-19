@@ -1,6 +1,7 @@
 # The compiled program
 *.exe
 /tmps
+/lab3_tests
 /build/
 
 # Editor settings
