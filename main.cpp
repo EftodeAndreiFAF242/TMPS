@@ -32,10 +32,9 @@
 #include "Lab2/workorders/WorkOrderBuilder.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
-#include "Lab3/external/SmsGateway.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
+#include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/SignedNotifier.h"
-#include "Lab3/notifications/SmsNotifier.h"
 #include "Lab3/services/CityHall.h"
 
 using namespace std;
@@ -317,29 +316,28 @@ void runLab3(ReportStorage& storage) {
     validator.addRule(&categoryRule);
     validator.addRule(&descriptionRule);
 
-    // ---- 1. Adapter: ReportService from lab 1 sends SMS through the phone company's class ----
+    // ---- 1. Adapter: ReportService from lab 1 writes paper letters through the C library ----
     cout << "\n--- 1. Adapter ---\n";
 
-    SmsGateway gateway;
-    SmsNotifier sms(&gateway, "+373 69 123 456");
+    LetterNotifier letters("letters.txt", "Ion Popescu, 15 Dacia Blvd.");
 
-    cout << "ReportService from lab 1 gets an SmsNotifier, and its code stays the same:\n";
-    ReportService smsService(&storage, &validator, &sms);
-    smsService.submit(Report("Street light", "Three street lights are off on Ion Creanga St."));
-    smsService.submit(Report("Pothole", "Hole"));
+    cout << "ReportService from lab 1 gets a LetterNotifier, and its code stays the same:\n";
+    ReportService letterService(&storage, &validator, &letters);
+    letterService.submit(Report("Street light", "Three street lights are off on Ion Creanga St."));
+    letterService.submit(Report("Pothole", "Hole"));
 
-    cout << "A phone number that is missing makes SmsGateway return an error code:\n";
-    SmsNotifier noNumber(&gateway, "");
-    noNumber.send("This message has nowhere to go.");
+    cout << "A file that can't be opened makes fopen return nullptr, and the adapter says so:\n";
+    LetterNotifier noFolder("no_such_folder/letters.txt", "Ion Popescu, 15 Dacia Blvd.");
+    noFolder.send("This letter has nowhere to go.");
 
     // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
     cout << "\n--- 2. Decorator ---\n";
 
-    SignedNotifier signedSms(&sms);
-    ArchivedNotifier archivedSms(&signedSms);
+    SignedNotifier signedLetters(&letters);
+    ArchivedNotifier archivedLetters(&signedLetters);
 
-    cout << "The SMS notifier, wrapped so every message is signed and kept in the archive:\n";
-    ReportService decoratedService(&storage, &validator, &archivedSms);
+    cout << "The letter notifier, wrapped so every message is signed and kept in the archive:\n";
+    ReportService decoratedService(&storage, &validator, &archivedLetters);
     decoratedService.submit(Report("Garbage", "The garbage bins on Puskin St. are full"));
 
     cout << "The same signature works on any notifier, for example on e-mail:\n";
@@ -347,16 +345,16 @@ void runLab3(ReportStorage& storage) {
     SignedNotifier signedEmail(&email);
     signedEmail.send("The street lights on Ion Creanga St. were repaired.");
 
-    cout << "The archive kept " << archivedSms.getHistory().size() << " message(s):\n";
-    for (const string& message : archivedSms.getHistory()) {
+    cout << "The archive kept " << archivedLetters.getHistory().size() << " message(s):\n";
+    for (const string& message : archivedLetters.getHistory()) {
         cout << "  - " << message << "\n";
     }
 
     // ---- 3. Facade: main only calls reportProblem(), and city hall does every step behind it ----
     cout << "\n--- 3. Facade ---\n";
 
-    // City hall gets the signed and archived SMS notifier, so the three patterns work together.
-    CityHall cityHall(&storage, &archivedSms);
+    // City hall gets the signed and archived letter notifier, so the three patterns work together.
+    CityHall cityHall(&storage, &archivedLetters);
 
     cout << "An urgent pothole, reported with one call:\n";
     cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
@@ -368,33 +366,33 @@ void runLab3(ReportStorage& storage) {
     cout << "\nA report that is refused does not get a work order:\n";
     cityHall.reportProblem("Aliens", "Help", "Nowhere", false);
 
-    cout << "\nEvery message city hall sent by SMS in this example:\n";
-    for (const string& message : archivedSms.getHistory()) {
+    cout << "\nEvery letter city hall sent in this example:\n";
+    for (const string& message : archivedLetters.getHistory()) {
         cout << "  - " << message << "\n";
     }
+    cout << "The letters are in the file letters.txt, ready for the post office.\n";
 }
 
 // Laboratory work 3 with your own data: the reports typed in the console go through city hall.
 void runLab3Input(ReportStorage& storage) {
     cout << "\n=== Laboratory work 3: your own reports ===\n";
 
-    // Adapter: SMS is one more way to tell the citizen.
+    // Adapter: a paper letter is one more way to tell the citizen.
     ConsoleNotifier consoleNotifier;
     EmailNotifier emailNotifier;
-    SmsGateway gateway;
 
-    string channel = ask("How should the citizen be told? 1 - console, 2 - e-mail, 3 - SMS: ");
-    string phoneNumber;
+    string channel = ask("How should the citizen be told? 1 - console, 2 - e-mail, 3 - paper letter: ");
+    string homeAddress;
     if (channel == "3") {
-        phoneNumber = ask("Phone number: ");
+        homeAddress = ask("The citizen's home address: ");
     }
-    SmsNotifier smsNotifier(&gateway, phoneNumber);
+    LetterNotifier letterNotifier("letters.txt", homeAddress);
 
     Notifier* notifier = &consoleNotifier;
     if (channel == "2") {
         notifier = &emailNotifier;
     } else if (channel == "3") {
-        notifier = &smsNotifier;
+        notifier = &letterNotifier;
     }
 
     // Decorator: whatever the channel is, every message is signed and archived.

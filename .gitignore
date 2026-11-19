@@ -5,3 +5,6 @@
 
 # Editor settings
 /.vscode/
+
+# The letters the program writes for the post office
+letters.txt
