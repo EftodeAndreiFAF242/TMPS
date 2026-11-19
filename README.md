@@ -18,7 +18,7 @@ named after the class.
 | --- | --- | --- |
 | 1 | SOLID principles | [Lab1](Lab1/) |
 | 2 | Creational design patterns | [Lab2](Lab2/) |
-| 3 | Structural design patterns | [Lab3](Lab3/) |
+| 3 | Structural design patterns | [Lab3](Lab3/) ([report](Lab3/REPORT.md)) |
 
 ## How to run
 
@@ -52,6 +52,16 @@ The program shows a menu. Each laboratory work can run in two ways:
 
 Type `0` to exit.
 
+## How to run the tests
+
+The unit tests of lab 3 are in `tests/Lab3Tests.cpp`. They run with one command:
+
+```
+g++ -std=c++17 -I. tests/Lab3Tests.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp -o lab3_tests && ./lab3_tests
+```
+
+With CMake, after the build above: `ctest --test-dir build --output-on-failure`.
+
 ## Files
 
 ```
@@ -71,10 +81,11 @@ Lab2/               laboratory work 2: creational design patterns
   crews/            the crews that do the work: Crew, RoadCrew, ElectricianCrew, GarbageCrew, GreenSpacesCrew
   fleet/            the trucks of city hall: Truck, TruckPool
 Lab3/               laboratory work 3: structural design patterns
-  README.md         the report
-  external/         the class that comes from the phone company: SmsGateway
-  notifications/    more ways to tell the citizen: SmsNotifier, NotifierDecorator, SignedNotifier, ArchivedNotifier
+  README.md         how to build, run and test lab 3
+  REPORT.md         the report
+  notifications/    more ways to tell the citizen: LetterNotifier, NotifierDecorator, SignedNotifier, ArchivedNotifier
   services/         one entry point for the whole system: CityHall
+tests/              the unit tests: Lab3Tests.cpp
 quiz_lab1_2/        a quiz to study for labs 1 and 2
 ```
 
