@@ -83,11 +83,10 @@ Lab2/               laboratory work 2: creational design patterns
 Lab3/               laboratory work 3: structural design patterns
   README.md         how to build, run and test lab 3
   REPORT.md         the report
-  notifications/    more ways to tell the citizen: LetterNotifier, ConsentNotifier, NotifierDecorator, SignedNotifier, ArchivedNotifier, MessageArchive
-  messages/         what city hall tells the citizen about a work order: CitizenMessage, CrewComingMessage, WorkDoneMessage
+  calendar/         the dates of the work orders: Calendar, SystemCalendar
+  notifications/    the extras around every message: NotifierDecorator, SignedNotifier, ArchivedNotifier, MessageArchive
   crews/            a team of crews: CrewTeam
   departments/      the department that sends a team: StormDepartment
-  map/              the city map: CityMap, Marker, MarkerStyle, MarkerStyleFactory
   validation/       the rule that knows the categories from the departments: KnownCategoryRule
   services/         one entry point for the whole system: CityHall
 tests/              the unit tests: Lab3Tests.cpp
