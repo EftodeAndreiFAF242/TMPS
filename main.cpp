@@ -7,6 +7,7 @@
 // Build and run: see README.md.
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "Lab1/validation/Validator.h"
 
 #include "Lab2/config/AppConfig.h"
+#include "Lab2/crews/ElectricianCrew.h"
 #include "Lab2/departments/Department.h"
 #include "Lab2/departments/LightingDepartment.h"
 #include "Lab2/departments/RoadDepartment.h"
@@ -32,6 +34,8 @@
 #include "Lab2/workorders/WorkOrderBuilder.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
+#include "Lab3/crews/CrewTeam.h"
+#include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
@@ -354,10 +358,35 @@ void runLab3(ReportStorage& storage) {
         cout << "  - " << message << "\n";
     }
 
-    // ---- 3. Facade: main only calls reportProblem(), and city hall does every step behind it ----
-    cout << "\n--- 3. Facade ---\n";
+    // ---- 3. Composite: a team of crews is sent out exactly like one crew ----
+    cout << "\n--- 3. Composite ---\n";
 
-    // City hall gets the signed and archived letter notifier, so the three patterns work together.
+    // The report is saved straight into the storage here, to show only the crews. Section 4 sends
+    // a storm report through city hall, with every check.
+    storage.add(Report("Storm damage", "A tree fell across Grenoble St. after the storm"));
+    vector<Report> savedReports = storage.all();
+    WorkOrder stormOrder = WorkOrderBuilder(savedReports.back(), "Grenoble St. 120")
+                               .setPriority("High")
+                               .build();
+
+    cout << "A department of lab 2 sends one crew:\n";
+    RoadDepartment roadDepartment;
+    roadDepartment.handle(stormOrder);
+
+    cout << "The storm department sends a team, through the same handle() of lab 2:\n";
+    StormDepartment stormDepartment;
+    stormDepartment.handle(stormOrder);
+
+    cout << "A team can have another team inside it, for a really big job:\n";
+    CrewTeam bigTeam;
+    bigTeam.add(make_unique<ElectricianCrew>());
+    bigTeam.add(stormDepartment.createCrew());
+    bigTeam.work(stormOrder);
+
+    // ---- 4. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    cout << "\n--- 4. Facade ---\n";
+
+    // City hall gets the signed and archived letter notifier, so the patterns work together.
     CityHall cityHall(&storage, &archivedLetters);
 
     // main tells city hall which department takes care of which category. A new department is
@@ -368,6 +397,7 @@ void runLab3(ReportStorage& storage) {
     cityHall.addDepartment("Pothole", &roads);
     cityHall.addDepartment("Street light", &lighting);
     cityHall.addDepartment("Garbage", &sanitation);
+    cityHall.addDepartment("Storm damage", &stormDepartment);
 
     cout << "An urgent pothole, reported with one call:\n";
     cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
@@ -375,6 +405,10 @@ void runLab3(ReportStorage& storage) {
     cout << "\nA broken street light that is not urgent:\n";
     cityHall.reportProblem("Street light", "The street light near the school is blinking",
                            "Mihai Viteazul St. 7", false);
+
+    cout << "\nStorm damage: a new category, and its department sends a team (Composite):\n";
+    cityHall.reportProblem("Storm damage", "A tree fell across Grenoble St. after the storm",
+                           "Grenoble St. 120", true);
 
     cout << "\nA report that is refused does not get a work order:\n";
     cityHall.reportProblem("Aliens", "Help", "Nowhere", false);
@@ -421,8 +455,11 @@ void runLab3Input(ReportStorage& storage) {
     cityHall.addDepartment("Pothole", &roads);
     cityHall.addDepartment("Street light", &lighting);
     cityHall.addDepartment("Garbage", &sanitation);
+    StormDepartment storm;
+    cityHall.addDepartment("Storm damage", &storm);
 
-    cout << "Known categories: Pothole, Street light, Garbage. A description needs at least 10 characters.\n";
+    cout << "Known categories: Pothole, Street light, Garbage, Storm damage. "
+            "A description needs at least 10 characters.\n";
     while (true) {
         string category = ask("\nCategory (or press Enter to stop): ");
         if (category == "") {

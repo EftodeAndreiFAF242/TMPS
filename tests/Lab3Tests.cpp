@@ -3,15 +3,24 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Lab1/notifications/ConsoleNotifier.h"
 #include "Lab1/notifications/Notifier.h"
 #include "Lab1/storage/ReportStorage.h"
+#include "Lab2/crews/Crew.h"
+#include "Lab2/crews/ElectricianCrew.h"
+#include "Lab2/crews/GarbageCrew.h"
+#include "Lab2/crews/RoadCrew.h"
 #include "Lab2/departments/LightingDepartment.h"
 #include "Lab2/departments/RoadDepartment.h"
+#include "Lab2/workorders/WorkOrder.h"
+#include "Lab3/crews/CrewTeam.h"
+#include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
@@ -166,6 +175,67 @@ void testDecoratorWrapsTheAdapter() {
     remove("test_letters.txt");
 }
 
+// ---- Composite: CrewTeam is a Crew made of other crews ----
+
+// What a crew writes on the screen when it does a work order. It takes any Crew, so it is the same
+// code for one crew and for a team, like Department::handle() in lab 2.
+string workOf(const Crew& crew) {
+    WorkOrder order;
+    order.address = "Grenoble St. 120";
+    startCapture();
+    crew.work(order);
+    return stopCapture();
+}
+
+void testTeamAndSingleCrewUseTheSameInterface() {
+    RoadCrew roadCrew;
+    CrewTeam team;
+    team.add(make_unique<RoadCrew>());
+    team.add(make_unique<GarbageCrew>());
+
+    string oneCrew = workOf(roadCrew);
+    string twoCrews = workOf(team);
+
+    check("Composite: one crew and a team are used through the same Crew interface",
+          oneCrew == "the road crew fills the pothole at Grenoble St. 120.\n"
+              && twoCrews.find("the road crew fills the pothole at Grenoble St. 120.") != string::npos
+              && twoCrews.find("the garbage crew cleans up at Grenoble St. 120.") != string::npos);
+}
+
+void testTeamInsideATeam() {
+    unique_ptr<CrewTeam> stormTeam = make_unique<CrewTeam>();
+    stormTeam->add(make_unique<RoadCrew>());
+    stormTeam->add(make_unique<GarbageCrew>());
+
+    CrewTeam bigTeam;
+    bigTeam.add(make_unique<ElectricianCrew>());
+    bigTeam.add(move(stormTeam));
+
+    string screen = workOf(bigTeam);
+
+    check("Composite: a team inside a team works too, every crew in the tree does its job",
+          screen.find("the electricians repair the street light") != string::npos
+              && screen.find("the road crew fills the pothole") != string::npos
+              && screen.find("the garbage crew cleans up") != string::npos);
+}
+
+void testStormDepartmentSendsATeamThroughCityHall() {
+    ReportStorage storage;
+    RecordingNotifier recorder;
+
+    startCapture();
+    CityHall cityHall(&storage, &recorder);
+    StormDepartment storm;
+    cityHall.addDepartment("Storm damage", &storm);
+    bool accepted = cityHall.reportProblem("Storm damage", "A tree fell across the road after the storm",
+                                           "Grenoble St. 120", true);
+    string screen = stopCapture();
+
+    check("Composite: city hall sends the storm team the same way it sends one crew",
+          accepted && screen.find("a team of 2 crews goes out") != string::npos
+              && comesBefore(screen, "the road crew fills the pothole", "the garbage crew cleans up"));
+}
+
 // ---- Facade: CityHall hides the classes of lab 1 and lab 2 behind reportProblem() ----
 
 void testAcceptedReportGoesThroughEveryStepInOrder() {
@@ -259,6 +329,11 @@ int main() {
     testSignatureIsAdded();
     testDecoratorsWorkInAnyOrder();
     testDecoratorWrapsTheAdapter();
+
+    cout << "\n--- Composite ---\n";
+    testTeamAndSingleCrewUseTheSameInterface();
+    testTeamInsideATeam();
+    testStormDepartmentSendsATeamThroughCityHall();
 
     cout << "\n--- Facade ---\n";
     testAcceptedReportGoesThroughEveryStepInOrder();
