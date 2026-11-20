@@ -22,6 +22,9 @@
 #include "Lab2/workorders/WorkOrder.h"
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
+#include "Lab3/map/CityMap.h"
+#include "Lab3/map/MarkerStyle.h"
+#include "Lab3/map/MarkerStyleFactory.h"
 #include "Lab3/messages/CrewComingMessage.h"
 #include "Lab3/messages/WorkDoneMessage.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
@@ -338,6 +341,86 @@ void testStormDepartmentSendsATeamThroughCityHall() {
               && comesBefore(screen, "the road crew fills the pothole", "the garbage crew cleans up"));
 }
 
+// ---- Flyweight: the markers of the city map share one MarkerStyle per category ----
+
+// How many times a text appears in another text.
+int countOf(const string& text, const string& part) {
+    int count = 0;
+    size_t position = text.find(part);
+    while (position != string::npos) {
+        count++;
+        position = text.find(part, position + 1);
+    }
+    return count;
+}
+
+void testSameCategoryGivesTheSameStyle() {
+    MarkerStyleFactory factory;
+
+    startCapture();
+    const MarkerStyle* first = factory.get("Pothole");
+    const MarkerStyle* second = factory.get("Pothole");
+    const MarkerStyle* garbage = factory.get("Garbage");
+    stopCapture();
+
+    check("Flyweight: two requests for the same category return the same instance",
+          first == second && first != garbage && factory.count() == 2);
+}
+
+void testManyMarkersShareFewStyles() {
+    CityMap map;
+    string categories[] = {"Pothole", "Street light", "Garbage", "Storm damage"};
+
+    startCapture();
+    for (int i = 0; i < 10000; i++) {
+        map.addMarker(i + 1, categories[i % 4], "Stefan cel Mare Blvd. " + to_string(i % 200 + 1));
+    }
+    string screen = stopCapture();
+
+    // The measurement: the memory the icons take with sharing and without it.
+    int sharedKilobytes = map.styleCount() * MarkerStyle::ICON_SIZE / 1024;
+    int ownKilobytes = map.markerCount() * MarkerStyle::ICON_SIZE / 1024;
+    check("Flyweight: 10000 markers in 4 categories make only 4 styles, each icon is loaded once",
+          map.markerCount() == 10000 && map.styleCount() == 4 && countOf(screen, "was loaded") == 4);
+    check("Flyweight: the icons take " + to_string(sharedKilobytes) + " KB instead of "
+              + to_string(ownKilobytes) + " KB",
+          sharedKilobytes == 16 && ownKilobytes == 40000);
+}
+
+void testAddressStaysOutsideTheStyle() {
+    CityMap map;
+
+    startCapture();
+    map.addMarker(1, "Pothole", "Ismail St. 40");
+    map.addMarker(2, "Pothole", "Dacia Blvd. 5");
+    map.show();
+    string screen = stopCapture();
+
+    check("Flyweight: one shared style draws two markers at two addresses, it does not keep them",
+          map.styleCount() == 1 && screen.find("[Pothole] report #1 at Ismail St. 40") != string::npos
+              && screen.find("[Pothole] report #2 at Dacia Blvd. 5") != string::npos);
+}
+
+void testCityHallPutsEveryAcceptedReportOnTheMap() {
+    ReportStorage storage;
+    RecordingNotifier recorder;
+
+    startCapture();
+    CityHall cityHall(&storage, &recorder);
+    RoadDepartment roads;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
+    cityHall.reportProblem("Pothole", "Hole", "Dacia Blvd. 5", false);
+    string before = stopCapture();
+    startCapture();
+    cityHall.showMap();
+    string map = stopCapture();
+
+    check("Flyweight: city hall puts the accepted report on its map, and not the refused one",
+          map.find("[Pothole] report #1 at Ismail St. 40") != string::npos
+              && map.find("Dacia Blvd. 5") == string::npos && countOf(before, "was loaded") == 1);
+}
+
 // ---- Facade: CityHall hides the classes of lab 1 and lab 2 behind reportProblem() ----
 
 void testAcceptedReportGoesThroughEveryStepInOrder() {
@@ -446,6 +529,12 @@ int main() {
     testTeamAndSingleCrewUseTheSameInterface();
     testTeamInsideATeam();
     testStormDepartmentSendsATeamThroughCityHall();
+
+    cout << "\n--- Flyweight ---\n";
+    testSameCategoryGivesTheSameStyle();
+    testManyMarkersShareFewStyles();
+    testAddressStaysOutsideTheStyle();
+    testCityHallPutsEveryAcceptedReportOnTheMap();
 
     cout << "\n--- Facade ---\n";
     testAcceptedReportGoesThroughEveryStepInOrder();

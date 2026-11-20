@@ -36,6 +36,8 @@
 
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
+#include "Lab3/map/CityMap.h"
+#include "Lab3/map/MarkerStyle.h"
 #include "Lab3/messages/CrewComingMessage.h"
 #include "Lab3/messages/WorkDoneMessage.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
@@ -421,8 +423,30 @@ void runLab3(ReportStorage& storage) {
     bigTeam.add(stormDepartment.createCrew());
     bigTeam.work(stormOrder);
 
-    // ---- 6. Facade: main only calls reportProblem(), and city hall does every step behind it ----
-    cout << "\n--- 6. Facade ---\n";
+    // ---- 6. Flyweight: thousands of markers on the city map share one style per category ----
+    cout << "\n--- 6. Flyweight ---\n";
+
+    cout << "Three markers, two of them potholes. The pothole icon is loaded only once:\n";
+    CityMap smallMap;
+    smallMap.addMarker(101, "Pothole", "Ismail St. 40");
+    smallMap.addMarker(102, "Pothole", "Dacia Blvd. 5");
+    smallMap.addMarker(103, "Garbage", "Puskin St. 22");
+    smallMap.show();
+
+    cout << "A year of reports: 10000 markers in 4 categories:\n";
+    CityMap yearMap;
+    string categories[] = {"Pothole", "Street light", "Garbage", "Storm damage"};
+    for (int i = 0; i < 10000; i++) {
+        yearMap.addMarker(i + 1, categories[i % 4], "Stefan cel Mare Blvd. " + to_string(i % 200 + 1));
+    }
+    int sharedBytes = yearMap.styleCount() * MarkerStyle::ICON_SIZE;
+    int ownBytes = yearMap.markerCount() * MarkerStyle::ICON_SIZE;
+    cout << "  " << yearMap.markerCount() << " markers share " << yearMap.styleCount() << " styles.\n";
+    cout << "  The icons take " << sharedBytes / 1024 << " KB. If every marker kept its own icon,\n"
+         << "  they would take " << ownBytes / 1024 << " KB.\n";
+
+    // ---- 7. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    cout << "\n--- 7. Facade ---\n";
 
     // City hall gets the archived and signed notifier, which goes through the consent proxy to the
     // letter adapter, so the patterns work together on every report.
@@ -457,6 +481,9 @@ void runLab3(ReportStorage& storage) {
         cout << "  - " << message << "\n";
     }
     cout << "The letters are in the file letters.txt, ready for the post office.\n";
+
+    cout << "\nEvery report city hall accepted is on its map:\n";
+    cityHall.showMap();
 }
 
 // Laboratory work 3 with your own data: the reports typed in the console go through city hall.
@@ -519,6 +546,9 @@ void runLab3Input(ReportStorage& storage) {
     for (const string& message : archive.all()) {
         cout << "  - " << message << "\n";
     }
+
+    cout << "\n";
+    cityHall.showMap();
 }
 
 int main() {

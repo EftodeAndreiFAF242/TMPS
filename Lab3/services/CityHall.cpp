@@ -49,6 +49,9 @@ bool CityHall::reportProblem(const string& category, const string& description,
     WorkOrder order = builder.build();
     orderPrinter.print(order);
 
+    // The report goes on the city map. Its marker shares the style of its category (Flyweight).
+    cityMap.addMarker(report.id, category, address);
+
     // Step 3 (lab 2, Object Pool and Factory Method): borrow a truck, let the department of the
     // category send its crew, and give the truck back when the job is done. The citizen is told
     // before and after (Bridge: the message says what, the notifier decides how it travels).
@@ -63,4 +66,8 @@ bool CityHall::reportProblem(const string& category, const string& description,
     trucks.release(truck);
     workDoneMessage.sendAbout(order);
     return true;
+}
+
+void CityHall::showMap() const {
+    cityMap.show();
 }

@@ -10,6 +10,7 @@
 #include "Lab1/validation/Validator.h"
 #include "Lab2/fleet/TruckPool.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
+#include "Lab3/map/CityMap.h"
 #include "Lab3/messages/CrewComingMessage.h"
 #include "Lab3/messages/WorkDoneMessage.h"
 #include "Lab3/validation/KnownCategoryRule.h"
@@ -36,6 +37,9 @@ public:
     bool reportProblem(const std::string& category, const std::string& description,
                        const std::string& address, bool urgent);
 
+    // Shows the map with a marker for every report city hall accepted.
+    void showMap() const;
+
 private:
     ReportStorage* storage;
     std::map<std::string, const Department*> departments;  // the category and its department
@@ -47,4 +51,5 @@ private:
     WorkDoneMessage workDoneMessage;
     TruckPool trucks;
     WorkOrderPrinter orderPrinter;
+    CityMap cityMap;
 };
