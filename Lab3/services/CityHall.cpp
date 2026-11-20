@@ -12,11 +12,13 @@
 #include "Lab2/fleet/Truck.h"
 #include "Lab2/workorders/WorkOrder.h"
 #include "Lab2/workorders/WorkOrderBuilder.h"
+#include "Lab3/calendar/Calendar.h"
 
 using namespace std;
 
-CityHall::CityHall(ReportStorage* storage, Notifier* notifier)
+CityHall::CityHall(ReportStorage* storage, Notifier* notifier, const Calendar* calendar)
     : storage(storage),
+      calendar(calendar),
       categoryRule(&departments),
       reportService(storage, &validator, notifier),
       trucks(AppConfig::getInstance().getTruckCount()) {
@@ -46,6 +48,9 @@ bool CityHall::reportProblem(const string& category, const string& description,
     }
     WorkOrder order = builder.build();
     orderPrinter.print(order);
+
+    // The work order says "2 days", and the calendar (the adapter) gives the real date.
+    cout << "  done by:  " << calendar->dateIn(order.deadlineDays) << "\n";
 
     // Step 3 (lab 2, Object Pool and Factory Method): borrow a truck, let the department of the
     // category send its crew, and give the truck back when the job is done.

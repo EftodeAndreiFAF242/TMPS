@@ -6,6 +6,7 @@
 //
 // Build and run: see README.md.
 
+#include <ctime>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -34,10 +35,11 @@
 #include "Lab2/workorders/WorkOrderBuilder.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
 
+#include "Lab3/calendar/Calendar.h"
+#include "Lab3/calendar/SystemCalendar.h"
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
-#include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
@@ -321,19 +323,18 @@ void runLab3(ReportStorage& storage) {
     validator.addRule(&categoryRule);
     validator.addRule(&descriptionRule);
 
-    // ---- 1. Adapter: ReportService from lab 1 writes paper letters through the C library ----
+    // ---- 1. Adapter: the dates of Calendar come from the time functions of the C library ----
     cout << "\n--- 1. Adapter ---\n";
 
-    LetterNotifier letters("letters.txt", "Ion Popescu, 15 Dacia Blvd.");
+    // The rest of the program knows only Calendar. The adapter turns its one call into the
+    // C library's localtime, mktime and strftime.
+    SystemCalendar calendar(time(nullptr));
+    const Calendar* dates = &calendar;
 
-    cout << "ReportService from lab 1 gets a LetterNotifier, and its code stays the same:\n";
-    ReportService letterService(&storage, &validator, &letters);
-    letterService.submit(Report("Street light", "Three street lights are off on Ion Creanga St."));
-    letterService.submit(Report("Pothole", "Hole"));
-
-    cout << "A file that can't be opened makes fopen return nullptr, and the adapter says so:\n";
-    LetterNotifier noFolder("no_such_folder/letters.txt", "Ion Popescu, 15 Dacia Blvd.");
-    noFolder.send("This letter has nowhere to go.");
+    cout << "Today is " << dates->dateIn(0) << ".\n";
+    cout << "An urgent work order (2 days) must be done by " << dates->dateIn(2) << ".\n";
+    cout << "A normal work order (7 days) must be done by " << dates->dateIn(7) << ".\n";
+    cout << "In 45 days it is " << dates->dateIn(45) << ": mktime moved the date into the right month.\n";
 
     // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
     cout << "\n--- 2. Decorator ---\n";
@@ -341,17 +342,18 @@ void runLab3(ReportStorage& storage) {
     // The archive is a list of its own. ArchivedNotifier only writes into it, so the decorator
     // has nothing more than send(), and main reads the list without knowing who wrote it.
     MessageArchive archive;
-    SignedNotifier signedLetters(&letters);
-    ArchivedNotifier archivedLetters(&signedLetters, &archive);
-
-    cout << "The letter notifier, wrapped so every message is signed and kept in the archive:\n";
-    ReportService decoratedService(&storage, &validator, &archivedLetters);
-    decoratedService.submit(Report("Garbage", "The garbage bins on Puskin St. are full"));
-
-    cout << "The same signature works on any notifier, for example on e-mail:\n";
     EmailNotifier email;
     SignedNotifier signedEmail(&email);
-    signedEmail.send("The street lights on Ion Creanga St. were repaired.");
+    ArchivedNotifier archivedEmail(&signedEmail, &archive);
+
+    cout << "The e-mail notifier, wrapped so every message is signed and kept in the archive:\n";
+    ReportService decoratedService(&storage, &validator, &archivedEmail);
+    decoratedService.submit(Report("Garbage", "The garbage bins on Puskin St. are full"));
+
+    cout << "The same signature works on any notifier, for example on the console:\n";
+    ConsoleNotifier console;
+    SignedNotifier signedConsole(&console);
+    signedConsole.send("The street lights on Ion Creanga St. were repaired.");
 
     cout << "The archive kept " << archive.all().size() << " message(s):\n";
     for (const string& message : archive.all()) {
@@ -386,8 +388,9 @@ void runLab3(ReportStorage& storage) {
     // ---- 4. Facade: main only calls reportProblem(), and city hall does every step behind it ----
     cout << "\n--- 4. Facade ---\n";
 
-    // City hall gets the signed and archived letter notifier, so the patterns work together.
-    CityHall cityHall(&storage, &archivedLetters);
+    // City hall gets the archived and signed e-mail notifier and the calendar adapter, so the
+    // patterns work together on every report.
+    CityHall cityHall(&storage, &archivedEmail, &calendar);
 
     // main tells city hall which department takes care of which category. A new department is
     // one more class and one more line here, and the code of CityHall does not change.
@@ -413,33 +416,21 @@ void runLab3(ReportStorage& storage) {
     cout << "\nA report that is refused does not get a work order:\n";
     cityHall.reportProblem("Aliens", "Help", "Nowhere", false);
 
-    cout << "\nEvery letter city hall sent in this example:\n";
+    cout << "\nEvery message city hall sent in this example:\n";
     for (const string& message : archive.all()) {
         cout << "  - " << message << "\n";
     }
-    cout << "The letters are in the file letters.txt, ready for the post office.\n";
 }
 
 // Laboratory work 3 with your own data: the reports typed in the console go through city hall.
 void runLab3Input(ReportStorage& storage) {
     cout << "\n=== Laboratory work 3: your own reports ===\n";
 
-    // Adapter: a paper letter is one more way to tell the citizen.
     ConsoleNotifier consoleNotifier;
     EmailNotifier emailNotifier;
-
-    string channel = ask("How should the citizen be told? 1 - console, 2 - e-mail, 3 - paper letter: ");
-    string homeAddress;
-    if (channel == "3") {
-        homeAddress = ask("The citizen's home address: ");
-    }
-    LetterNotifier letterNotifier("letters.txt", homeAddress);
-
     Notifier* notifier = &consoleNotifier;
-    if (channel == "2") {
+    if (ask("How should the citizen be told? 1 - console, 2 - e-mail: ") == "2") {
         notifier = &emailNotifier;
-    } else if (channel == "3") {
-        notifier = &letterNotifier;
     }
 
     // Decorator: whatever the channel is, every message is signed and archived.
@@ -447,8 +438,11 @@ void runLab3Input(ReportStorage& storage) {
     SignedNotifier signedNotifier(notifier);
     ArchivedNotifier archivedNotifier(&signedNotifier, &archive);
 
+    // Adapter: the dates of the work orders come from the C library, through SystemCalendar.
+    SystemCalendar calendar(time(nullptr));
+
     // Facade: from here on, main only talks to city hall.
-    CityHall cityHall(&storage, &archivedNotifier);
+    CityHall cityHall(&storage, &archivedNotifier, &calendar);
     RoadDepartment roads;
     LightingDepartment lighting;
     SanitationDepartment sanitation;

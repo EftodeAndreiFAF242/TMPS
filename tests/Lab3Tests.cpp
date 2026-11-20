@@ -1,7 +1,6 @@
 // Lab 3 - Unit tests: at least two tests for each structural pattern, each one proves its key property
 
-#include <cstdio>
-#include <fstream>
+#include <ctime>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -10,6 +9,7 @@
 #include <vector>
 
 #include "Lab1/notifications/ConsoleNotifier.h"
+#include "Lab1/notifications/EmailNotifier.h"
 #include "Lab1/notifications/Notifier.h"
 #include "Lab1/storage/ReportStorage.h"
 #include "Lab2/crews/Crew.h"
@@ -19,10 +19,11 @@
 #include "Lab2/departments/LightingDepartment.h"
 #include "Lab2/departments/RoadDepartment.h"
 #include "Lab2/workorders/WorkOrder.h"
+#include "Lab3/calendar/Calendar.h"
+#include "Lab3/calendar/SystemCalendar.h"
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
-#include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
@@ -74,54 +75,48 @@ bool comesBefore(const string& screen, const string& first, const string& second
     return firstPosition != string::npos && secondPosition != string::npos && firstPosition < secondPosition;
 }
 
-// The whole text of a file, or an empty text if the file does not exist.
-string readFile(const string& fileName) {
-    ifstream file(fileName);
-    stringstream text;
-    text << file.rdbuf();
-    return text.str();
+// The time of a day at noon, made with the C library, so the calendar tests always count from the
+// same day, whatever day they run on.
+time_t noonOf(int day, int month, int year) {
+    tm date = {};
+    date.tm_mday = day;
+    date.tm_mon = month - 1;     // in the C library the months start at 0
+    date.tm_year = year - 1900;  // and the years are counted from 1900
+    date.tm_hour = 12;
+    return mktime(&date);
 }
 
-// ---- Adapter: LetterNotifier adapts the C library (fopen, fputs, fclose) to Notifier ----
+// The calendar every test uses: "today" is always 20 November 2026.
+const SystemCalendar testCalendar(noonOf(20, 11, 2026));
 
-void testLetterIsWrittenToTheFile() {
-    remove("test_letters.txt");
-    LetterNotifier letters("test_letters.txt", "Ion Popescu, 15 Dacia Blvd.");
-    Notifier* notifier = &letters;  // used only through the interface, like ReportService does
+// ---- Adapter: SystemCalendar adapts the time functions of the C library to Calendar ----
 
-    startCapture();
-    notifier->send("Report #1 was registered.");
-    stopCapture();
+void testDateInAFewDays() {
+    const Calendar* calendar = &testCalendar;  // used only through the interface, like CityHall does
 
-    check("Adapter: send() puts the home address and the message into the file through the C library",
-          readFile("test_letters.txt") == "To: Ion Popescu, 15 Dacia Blvd.\nReport #1 was registered.\n\n");
-    remove("test_letters.txt");
+    check("Adapter: dateIn() turns the C library's time into the date the project wants",
+          calendar->dateIn(0) == "20.11.2026" && calendar->dateIn(2) == "22.11.2026");
 }
 
-void testLettersAreAddedAtTheEnd() {
-    remove("test_letters.txt");
-    LetterNotifier letters("test_letters.txt", "Ion Popescu, 15 Dacia Blvd.");
-
-    startCapture();
-    letters.send("First letter.");
-    letters.send("Second letter.");
-    stopCapture();
-
-    check("Adapter: a second letter is added after the first one, not written over it",
-          readFile("test_letters.txt") == "To: Ion Popescu, 15 Dacia Blvd.\nFirst letter.\n\n"
-                                          "To: Ion Popescu, 15 Dacia Blvd.\nSecond letter.\n\n");
-    remove("test_letters.txt");
+void testDateMovesIntoTheNextMonthAndYear() {
+    check("Adapter: mktime turns 31 November into 01.12.2026, and 32 December into 01.01.2027",
+          testCalendar.dateIn(11) == "01.12.2026" && testCalendar.dateIn(42) == "01.01.2027");
 }
 
-void testFileThatCannotBeOpenedIsReported() {
-    LetterNotifier letters("no_such_folder/test_letters.txt", "Ion Popescu, 15 Dacia Blvd.");
+void testCityHallWritesTheDeadlineDate() {
+    ReportStorage storage;
+    RecordingNotifier recorder;
 
     startCapture();
-    letters.send("This letter has nowhere to go.");
+    CityHall cityHall(&storage, &recorder, &testCalendar);
+    RoadDepartment roads;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
+    cityHall.reportProblem("Pothole", "A deep pothole in front of 3 Columna St.", "Columna St. 3", false);
     string screen = stopCapture();
 
-    check("Adapter: when fopen returns nullptr, the adapter says the letter could not be written",
-          screen.find("could not be written") != string::npos);
+    check("Adapter: city hall writes the real date on the work order, 2 days and 7 days after today",
+          screen.find("done by:  22.11.2026") != string::npos && screen.find("done by:  27.11.2026") != string::npos);
 }
 
 // ---- Decorator: SignedNotifier and ArchivedNotifier wrap any Notifier ----
@@ -160,19 +155,20 @@ void testDecoratorsWorkInAnyOrder() {
               && archive2.all().size() == 1 && archive2.all()[0] == "Hello -- Chisinau City Hall");
 }
 
-void testDecoratorWrapsTheAdapter() {
-    remove("test_letters.txt");
-    LetterNotifier letters("test_letters.txt", "Ion Popescu, 15 Dacia Blvd.");
-    SignedNotifier signedLetters(&letters);
+void testDecoratorWorksAroundAnyNotifier() {
+    ConsoleNotifier console;
+    EmailNotifier email;
+    SignedNotifier signedConsole(&console);
+    SignedNotifier signedEmail(&email);
 
     startCapture();
-    signedLetters.send("Report #2 was registered.");
-    stopCapture();
+    signedConsole.send("Report #2 was registered.");
+    signedEmail.send("Report #2 was registered.");
+    string screen = stopCapture();
 
-    check("Decorator: the signature also works around the letter adapter, without changing it",
-          readFile("test_letters.txt")
-              == "To: Ion Popescu, 15 Dacia Blvd.\nReport #2 was registered. -- Chisinau City Hall\n\n");
-    remove("test_letters.txt");
+    check("Decorator: the same signature works around the console and around e-mail, without changing them",
+          screen == "[console] Report #2 was registered. -- Chisinau City Hall\n"
+                    "[e-mail] Report #2 was registered. -- Chisinau City Hall\n");
 }
 
 // ---- Composite: CrewTeam is a Crew made of other crews ----
@@ -224,7 +220,7 @@ void testStormDepartmentSendsATeamThroughCityHall() {
     RecordingNotifier recorder;
 
     startCapture();
-    CityHall cityHall(&storage, &recorder);
+    CityHall cityHall(&storage, &recorder, &testCalendar);
     StormDepartment storm;
     cityHall.addDepartment("Storm damage", &storm);
     bool accepted = cityHall.reportProblem("Storm damage", "A tree fell across the road after the storm",
@@ -243,7 +239,7 @@ void testAcceptedReportGoesThroughEveryStepInOrder() {
     ConsoleNotifier console;
 
     startCapture();
-    CityHall cityHall(&storage, &console);
+    CityHall cityHall(&storage, &console, &testCalendar);
     RoadDepartment roads;
     cityHall.addDepartment("Pothole", &roads);
     bool accepted = cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital",
@@ -262,7 +258,7 @@ void testRefusedReportGetsNoWorkOrder() {
     RecordingNotifier recorder;
 
     startCapture();
-    CityHall cityHall(&storage, &recorder);
+    CityHall cityHall(&storage, &recorder, &testCalendar);
     RoadDepartment roads;
     cityHall.addDepartment("Pothole", &roads);
     bool accepted = cityHall.reportProblem("Pothole", "Hole", "Ismail St. 40", false);
@@ -280,7 +276,7 @@ void testEachCategoryGoesToItsDepartment() {
     RecordingNotifier recorder;
 
     startCapture();
-    CityHall cityHall(&storage, &recorder);
+    CityHall cityHall(&storage, &recorder, &testCalendar);
     RoadDepartment roads;
     LightingDepartment lighting;
     cityHall.addDepartment("Pothole", &roads);
@@ -299,7 +295,7 @@ void testNewDepartmentMakesItsCategoryKnown() {
     RecordingNotifier recorder;
 
     startCapture();
-    CityHall cityHall(&storage, &recorder);
+    CityHall cityHall(&storage, &recorder, &testCalendar);
     RoadDepartment roads;
     cityHall.addDepartment("Pothole", &roads);
     bool before = cityHall.reportProblem("Street light", "The street light near the school is blinking",
@@ -321,14 +317,14 @@ int main() {
     cout << "=== Unit tests of laboratory work 3: structural design patterns ===\n";
 
     cout << "\n--- Adapter ---\n";
-    testLetterIsWrittenToTheFile();
-    testLettersAreAddedAtTheEnd();
-    testFileThatCannotBeOpenedIsReported();
+    testDateInAFewDays();
+    testDateMovesIntoTheNextMonthAndYear();
+    testCityHallWritesTheDeadlineDate();
 
     cout << "\n--- Decorator ---\n";
     testSignatureIsAdded();
     testDecoratorsWorkInAnyOrder();
-    testDecoratorWrapsTheAdapter();
+    testDecoratorWorksAroundAnyNotifier();
 
     cout << "\n--- Composite ---\n";
     testTeamAndSingleCrewUseTheSameInterface();
