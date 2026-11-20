@@ -37,6 +37,7 @@
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
+#include "Lab3/notifications/ConsentNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
@@ -335,16 +336,33 @@ void runLab3(ReportStorage& storage) {
     LetterNotifier noFolder("no_such_folder/letters.txt", "Ion Popescu, 15 Dacia Blvd.");
     noFolder.send("This letter has nowhere to go.");
 
-    // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
-    cout << "\n--- 2. Decorator ---\n";
+    // ---- 2. Proxy: a stand-in that lets a letter through only if the citizen agreed ----
+    cout << "\n--- 2. Proxy ---\n";
+
+    // Each proxy stands in front of a real letter notifier, and ReportService from lab 1 gets the
+    // proxy as a Notifier, so it does not know that the access is checked.
+    ConsentNotifier lettersToIon(&letters, true);
+    LetterNotifier mariasLetters("letters.txt", "Maria Rusu, 3 Columna St.");
+    ConsentNotifier lettersToMaria(&mariasLetters, false);
+
+    cout << "Ion agreed to get letters, so the proxy passes the message on unchanged:\n";
+    ReportService ionService(&storage, &validator, &lettersToIon);
+    ionService.submit(Report("Garbage", "Garbage bags left behind the school on Columna St."));
+
+    cout << "Maria did not agree, so the proxy stops the letter before it reaches the C library:\n";
+    ReportService mariaService(&storage, &validator, &lettersToMaria);
+    mariaService.submit(Report("Pothole", "A deep pothole in front of 3 Columna St."));
+
+    // ---- 3. Decorator: notifiers get a signature and an archive, and their code stays the same ----
+    cout << "\n--- 3. Decorator ---\n";
 
     // The archive is a list of its own. ArchivedNotifier only writes into it, so the decorator
     // has nothing more than send(), and main reads the list without knowing who wrote it.
     MessageArchive archive;
-    SignedNotifier signedLetters(&letters);
+    SignedNotifier signedLetters(&lettersToIon);
     ArchivedNotifier archivedLetters(&signedLetters, &archive);
 
-    cout << "The letter notifier, wrapped so every message is signed and kept in the archive:\n";
+    cout << "Ion's letters (through the proxy), wrapped so every message is signed and archived:\n";
     ReportService decoratedService(&storage, &validator, &archivedLetters);
     decoratedService.submit(Report("Garbage", "The garbage bins on Puskin St. are full"));
 
@@ -358,10 +376,10 @@ void runLab3(ReportStorage& storage) {
         cout << "  - " << message << "\n";
     }
 
-    // ---- 3. Composite: a team of crews is sent out exactly like one crew ----
-    cout << "\n--- 3. Composite ---\n";
+    // ---- 4. Composite: a team of crews is sent out exactly like one crew ----
+    cout << "\n--- 4. Composite ---\n";
 
-    // The report is saved straight into the storage here, to show only the crews. Section 4 sends
+    // The report is saved straight into the storage here, to show only the crews. Section 5 sends
     // a storm report through city hall, with every check.
     storage.add(Report("Storm damage", "A tree fell across Grenoble St. after the storm"));
     vector<Report> savedReports = storage.all();
@@ -383,10 +401,11 @@ void runLab3(ReportStorage& storage) {
     bigTeam.add(stormDepartment.createCrew());
     bigTeam.work(stormOrder);
 
-    // ---- 4. Facade: main only calls reportProblem(), and city hall does every step behind it ----
-    cout << "\n--- 4. Facade ---\n";
+    // ---- 5. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    cout << "\n--- 5. Facade ---\n";
 
-    // City hall gets the signed and archived letter notifier, so the patterns work together.
+    // City hall gets the archived and signed notifier, which goes through the consent proxy to the
+    // letter adapter, so the patterns work together on every report.
     CityHall cityHall(&storage, &archivedLetters);
 
     // main tells city hall which department takes care of which category. A new department is
@@ -430,16 +449,21 @@ void runLab3Input(ReportStorage& storage) {
 
     string channel = ask("How should the citizen be told? 1 - console, 2 - e-mail, 3 - paper letter: ");
     string homeAddress;
+    bool agreed = true;
     if (channel == "3") {
         homeAddress = ask("The citizen's home address: ");
+        agreed = ask("Did the citizen agree to get letters? (y/n): ") == "y";
     }
     LetterNotifier letterNotifier("letters.txt", homeAddress);
+
+    // Proxy: the letters go through the consent check before they reach the adapter.
+    ConsentNotifier consentLetters(&letterNotifier, agreed);
 
     Notifier* notifier = &consoleNotifier;
     if (channel == "2") {
         notifier = &emailNotifier;
     } else if (channel == "3") {
-        notifier = &letterNotifier;
+        notifier = &consentLetters;
     }
 
     // Decorator: whatever the channel is, every message is signed and archived.

@@ -22,6 +22,7 @@
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
+#include "Lab3/notifications/ConsentNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
@@ -175,6 +176,46 @@ void testDecoratorWrapsTheAdapter() {
     remove("test_letters.txt");
 }
 
+// ---- Proxy: ConsentNotifier controls the access to the real notifier ----
+
+void testProxyPassesTheMessageUnchangedWithConsent() {
+    RecordingNotifier realNotifier;
+    ConsentNotifier proxy(&realNotifier, true);
+    Notifier* notifier = &proxy;  // used only through the interface, like ReportService does
+
+    notifier->send("Report #1 was registered.");
+
+    check("Proxy: with consent, the real notifier gets the message exactly as it was sent",
+          realNotifier.messages.size() == 1 && realNotifier.messages[0] == "Report #1 was registered.");
+}
+
+void testProxyBlocksTheMessageWithoutConsent() {
+    RecordingNotifier realNotifier;
+    ConsentNotifier proxy(&realNotifier, false);
+
+    startCapture();
+    proxy.send("Report #1 was registered.");
+    string screen = stopCapture();
+
+    check("Proxy: without consent, the real notifier is never called, and the screen says why",
+          realNotifier.messages.empty() && screen.find("not sent") != string::npos);
+}
+
+void testProxyStopsTheLetterBeforeTheCLibrary() {
+    remove("test_letters.txt");
+    LetterNotifier letters("test_letters.txt", "Maria Rusu, 3 Columna St.");
+    ConsentNotifier proxy(&letters, false);
+    SignedNotifier signedProxy(&proxy);  // the proxy is a Notifier, so a decorator can wrap it
+
+    startCapture();
+    signedProxy.send("Report #2 was registered.");
+    stopCapture();
+
+    check("Proxy: inside the decorators, a refused letter never reaches fopen, so no file is written",
+          readFile("test_letters.txt").empty());
+    remove("test_letters.txt");
+}
+
 // ---- Composite: CrewTeam is a Crew made of other crews ----
 
 // What a crew writes on the screen when it does a work order. It takes any Crew, so it is the same
@@ -324,6 +365,11 @@ int main() {
     testLetterIsWrittenToTheFile();
     testLettersAreAddedAtTheEnd();
     testFileThatCannotBeOpenedIsReported();
+
+    cout << "\n--- Proxy ---\n";
+    testProxyPassesTheMessageUnchangedWithConsent();
+    testProxyBlocksTheMessageWithoutConsent();
+    testProxyStopsTheLetterBeforeTheCLibrary();
 
     cout << "\n--- Decorator ---\n";
     testSignatureIsAdded();
