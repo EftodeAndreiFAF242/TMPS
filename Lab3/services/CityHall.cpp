@@ -17,6 +17,7 @@ using namespace std;
 
 CityHall::CityHall(ReportStorage* storage, Notifier* notifier)
     : storage(storage),
+      categoryRule(&departments),
       reportService(storage, &validator, notifier),
       trucks(AppConfig::getInstance().getTruckCount()) {
     validator.addRule(&categoryRule);
@@ -29,7 +30,8 @@ void CityHall::addDepartment(const string& category, const Department* departmen
 
 bool CityHall::reportProblem(const string& category, const string& description,
                              const string& address, bool urgent) {
-    // Step 1 (lab 1): check the report, save it and tell the citizen.
+    // Step 1 (lab 1): check the report, save it and tell the citizen. A category that has no
+    // department is refused here, by the KnownCategoryRule.
     if (!reportService.submit(Report(category, description))) {
         return false;
     }
@@ -45,12 +47,8 @@ bool CityHall::reportProblem(const string& category, const string& description,
     WorkOrder order = builder.build();
     orderPrinter.print(order);
 
-    // Step 3 (lab 2, Object Pool and Factory Method): find the department of the category, borrow
-    // a truck, let the department send its crew, and give the truck back when the job is done.
-    if (departments.count(category) == 0) {
-        cout << "No department takes care of \"" << category << "\" yet, so the work order waits.\n";
-        return true;
-    }
+    // Step 3 (lab 2, Object Pool and Factory Method): borrow a truck, let the department of the
+    // category send its crew, and give the truck back when the job is done.
     Truck* truck = trucks.acquire();
     if (truck == nullptr) {
         cout << "No truck is free, so the work order waits.\n";

@@ -224,6 +224,29 @@ void testEachCategoryGoesToItsDepartment() {
               && screen.find("the road crew") == string::npos);
 }
 
+void testNewDepartmentMakesItsCategoryKnown() {
+    ReportStorage storage;
+    RecordingNotifier recorder;
+
+    startCapture();
+    CityHall cityHall(&storage, &recorder);
+    RoadDepartment roads;
+    cityHall.addDepartment("Pothole", &roads);
+    bool before = cityHall.reportProblem("Street light", "The street light near the school is blinking",
+                                         "Mihai Viteazul St. 7", false);
+    LightingDepartment lighting;
+    cityHall.addDepartment("Street light", &lighting);
+    bool after = cityHall.reportProblem("Street light", "The street light near the school is blinking",
+                                        "Mihai Viteazul St. 7", false);
+    stopCapture();
+
+    check("Facade: a category with no department is refused, and the citizen is told why",
+          !before && recorder.messages.size() >= 1
+              && recorder.messages[0] == "Report refused: \"Street light\" is not a known category.");
+    check("Facade: after addDepartment() the same category is accepted, and CityHall did not change",
+          after && storage.all().size() == 1);
+}
+
 int main() {
     cout << "=== Unit tests of laboratory work 3: structural design patterns ===\n";
 
@@ -241,6 +264,7 @@ int main() {
     testAcceptedReportGoesThroughEveryStepInOrder();
     testRefusedReportGetsNoWorkOrder();
     testEachCategoryGoesToItsDepartment();
+    testNewDepartmentMakesItsCategoryKnown();
 
     cout << "\n" << testsRun << " tests, " << testsRun - testsFailed << " passed, " << testsFailed
          << " failed.\n";

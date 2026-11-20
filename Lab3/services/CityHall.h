@@ -6,11 +6,11 @@
 #include <string>
 
 #include "Lab1/reports/ReportService.h"
-#include "Lab1/validation/CategoryRule.h"
 #include "Lab1/validation/DescriptionRule.h"
 #include "Lab1/validation/Validator.h"
 #include "Lab2/fleet/TruckPool.h"
 #include "Lab2/workorders/WorkOrderPrinter.h"
+#include "Lab3/validation/KnownCategoryRule.h"
 
 class Department;
 class Notifier;
@@ -24,8 +24,9 @@ public:
     // City hall gets the storage and the way citizens are told, and makes the rest itself.
     CityHall(ReportStorage* storage, Notifier* notifier);
 
-    // Tells city hall which department takes care of a category. A new department is a new
-    // class and one more call to this method, and the code of CityHall stays the same.
+    // Tells city hall which department takes care of a category, and from then on the category is
+    // known. A new department is a new class and one more call to this method, and the code of
+    // CityHall stays the same.
     void addDepartment(const std::string& category, const Department* department);
 
     // Handles a problem from start to end. Returns false if the report was refused.
@@ -34,11 +35,11 @@ public:
 
 private:
     ReportStorage* storage;
-    CategoryRule categoryRule;
+    std::map<std::string, const Department*> departments;  // the category and its department
+    KnownCategoryRule categoryRule;                         // knows the categories from departments
     DescriptionRule descriptionRule;
     Validator validator;
     ReportService reportService;
-    std::map<std::string, const Department*> departments;  // the category and its department
     TruckPool trucks;
     WorkOrderPrinter orderPrinter;
 };
