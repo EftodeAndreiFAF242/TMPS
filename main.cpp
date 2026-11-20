@@ -36,6 +36,8 @@
 
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
+#include "Lab3/messages/CrewComingMessage.h"
+#include "Lab3/messages/WorkDoneMessage.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/ConsentNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
@@ -376,13 +378,31 @@ void runLab3(ReportStorage& storage) {
         cout << "  - " << message << "\n";
     }
 
-    // ---- 4. Composite: a team of crews is sent out exactly like one crew ----
-    cout << "\n--- 4. Composite ---\n";
+    // ---- 4. Bridge: what city hall says and how it travels are two separate hierarchies ----
+    cout << "\n--- 4. Bridge ---\n";
 
-    // The report is saved straight into the storage here, to show only the crews. Section 5 sends
+    // A work order for the garbage report that was just registered.
+    vector<Report> savedReports = storage.all();
+    WorkOrder garbageOrder = WorkOrderBuilder(savedReports.back(), "Puskin St. 22").build();
+
+    cout << "The same message, \"the work is done\", through two different channels:\n";
+    WorkDoneMessage doneByEmail(&email);
+    WorkDoneMessage doneByLetter(&archivedLetters);
+    doneByEmail.sendAbout(garbageOrder);
+    doneByLetter.sendAbout(garbageOrder);
+
+    cout << "Two different messages through the same channel:\n";
+    CrewComingMessage comingByEmail(&email);
+    comingByEmail.sendAbout(garbageOrder);
+    doneByEmail.sendAbout(garbageOrder);
+
+    // ---- 5. Composite: a team of crews is sent out exactly like one crew ----
+    cout << "\n--- 5. Composite ---\n";
+
+    // The report is saved straight into the storage here, to show only the crews. Section 6 sends
     // a storm report through city hall, with every check.
     storage.add(Report("Storm damage", "A tree fell across Grenoble St. after the storm"));
-    vector<Report> savedReports = storage.all();
+    savedReports = storage.all();
     WorkOrder stormOrder = WorkOrderBuilder(savedReports.back(), "Grenoble St. 120")
                                .setPriority("High")
                                .build();
@@ -401,8 +421,8 @@ void runLab3(ReportStorage& storage) {
     bigTeam.add(stormDepartment.createCrew());
     bigTeam.work(stormOrder);
 
-    // ---- 5. Facade: main only calls reportProblem(), and city hall does every step behind it ----
-    cout << "\n--- 5. Facade ---\n";
+    // ---- 6. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    cout << "\n--- 6. Facade ---\n";
 
     // City hall gets the archived and signed notifier, which goes through the consent proxy to the
     // letter adapter, so the patterns work together on every report.
