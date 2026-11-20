@@ -7,12 +7,10 @@
 
 #include "Lab2/crews/Crew.h"
 
-// Some jobs need more than one crew. A team is a Crew made of other crews: when the team works,
-// every crew in it works. Because a team is a Crew too, a department sends a team exactly the way
-// it sends one crew, and a team can even have another team inside it.
+// O echipă din mai multe echipaje
 class CrewTeam : public Crew {
 public:
-    // Adds a crew to the team. The team keeps it and deletes it when the team is deleted.
+    // The team now owns the crew
     void add(std::unique_ptr<Crew> member);
 
     void work(const WorkOrder& order) const override;

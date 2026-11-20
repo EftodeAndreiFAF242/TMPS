@@ -11,7 +11,7 @@ ArchivedNotifier::ArchivedNotifier(Notifier* wrapped, MessageArchive* archive) :
 }
 
 void ArchivedNotifier::send(const string& message) {
-    // The added part: the copy. Sending the message is still the wrapped notifier's job.
+    // Întâi copia, apoi trimitem mesajul
     archive->add(message);
     NotifierDecorator::send(message);
 }

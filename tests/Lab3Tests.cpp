@@ -33,7 +33,7 @@ using namespace std;
 int testsRun = 0;
 int testsFailed = 0;
 
-// Shows the result of one test. The program returns the number of failed tests, so 0 means all passed.
+// Prints PASS or FAIL
 void check(const string& testName, bool passed) {
     testsRun++;
     if (passed) {
@@ -44,7 +44,7 @@ void check(const string& testName, bool passed) {
     }
 }
 
-// A stub made only for the tests: a notifier that sends nothing and only remembers the messages.
+// Notificator fals: doar ține mesajele
 class RecordingNotifier : public Notifier {
 public:
     void send(const string& message) override {
@@ -54,7 +54,7 @@ public:
     vector<string> messages;
 };
 
-// While a test captures the screen, everything written with cout goes into this text instead.
+// cout goes into this string
 stringstream capturedScreen;
 streambuf* realScreen = nullptr;
 
@@ -68,31 +68,30 @@ string stopCapture() {
     return capturedScreen.str();
 }
 
-// True if both texts are on the screen and the first one was written before the second one.
+// Primul text e scris înaintea celuilalt
 bool comesBefore(const string& screen, const string& first, const string& second) {
     size_t firstPosition = screen.find(first);
     size_t secondPosition = screen.find(second);
     return firstPosition != string::npos && secondPosition != string::npos && firstPosition < secondPosition;
 }
 
-// The time of a day at noon, made with the C library, so the calendar tests always count from the
-// same day, whatever day they run on.
+// A fixed day, at noon
 time_t noonOf(int day, int month, int year) {
     tm date = {};
     date.tm_mday = day;
-    date.tm_mon = month - 1;     // in the C library the months start at 0
-    date.tm_year = year - 1900;  // and the years are counted from 1900
+    date.tm_mon = month - 1;     // lunile încep de la 0
+    date.tm_year = year - 1900;  // anii se numără de la 1900
     date.tm_hour = 12;
     return mktime(&date);
 }
 
-// The calendar every test uses: "today" is always 20 November 2026.
+// "Today" is always 20.11.2026
 const SystemCalendar testCalendar(noonOf(20, 11, 2026));
 
-// ---- Adapter: SystemCalendar adapts the time functions of the C library to Calendar ----
+// ---- Adapter: Calendar over the C library ----
 
 void testDateInAFewDays() {
-    const Calendar* calendar = &testCalendar;  // used only through the interface, like CityHall does
+    const Calendar* calendar = &testCalendar;  // only through the interface
 
     check("Adapter: dateIn() turns the C library's time into the date the project wants",
           calendar->dateIn(0) == "20.11.2026" && calendar->dateIn(2) == "22.11.2026");
@@ -119,7 +118,7 @@ void testCityHallWritesTheDeadlineDate() {
           screen.find("done by:  22.11.2026") != string::npos && screen.find("done by:  27.11.2026") != string::npos);
 }
 
-// ---- Decorator: SignedNotifier and ArchivedNotifier wrap any Notifier ----
+// ---- Decorator: semnătura și arhiva ----
 
 void testSignatureIsAdded() {
     RecordingNotifier recorder;
@@ -133,14 +132,14 @@ void testSignatureIsAdded() {
 }
 
 void testDecoratorsWorkInAnyOrder() {
-    // Order 1: the archive is outside the signature, so it keeps the text before it is signed.
+    // Order 1: archive outside the signature
     RecordingNotifier recorder1;
     MessageArchive archive1;
     SignedNotifier signed1(&recorder1);
     ArchivedNotifier archiveOutside(&signed1, &archive1);
     archiveOutside.send("Hello");
 
-    // Order 2: the signature is outside the archive, so the archive keeps the signed text.
+    // Ordinea 2: semnătura e în exterior
     RecordingNotifier recorder2;
     MessageArchive archive2;
     ArchivedNotifier archiveInside(&recorder2, &archive2);
@@ -171,10 +170,9 @@ void testDecoratorWorksAroundAnyNotifier() {
                     "[e-mail] Report #2 was registered. -- Chisinau City Hall\n");
 }
 
-// ---- Composite: CrewTeam is a Crew made of other crews ----
+// ---- Composite: a team is a Crew ----
 
-// What a crew writes on the screen when it does a work order. It takes any Crew, so it is the same
-// code for one crew and for a team, like Department::handle() in lab 2.
+// What any crew prints for an order
 string workOf(const Crew& crew) {
     WorkOrder order;
     order.address = "Grenoble St. 120";
@@ -232,7 +230,7 @@ void testStormDepartmentSendsATeamThroughCityHall() {
               && comesBefore(screen, "the road crew fills the pothole", "the garbage crew cleans up"));
 }
 
-// ---- Facade: CityHall hides the classes of lab 1 and lab 2 behind reportProblem() ----
+// ---- Facade: un singur apel, mulți pași ----
 
 void testAcceptedReportGoesThroughEveryStepInOrder() {
     ReportStorage storage;

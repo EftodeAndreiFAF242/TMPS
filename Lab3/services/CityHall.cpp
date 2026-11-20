@@ -32,16 +32,14 @@ void CityHall::addDepartment(const string& category, const Department* departmen
 
 bool CityHall::reportProblem(const string& category, const string& description,
                              const string& address, bool urgent) {
-    // Step 1 (lab 1): check the report, save it and tell the citizen. A category that has no
-    // department is refused here, by the KnownCategoryRule.
+    // Step 1: check, save, tell the citizen
     if (!reportService.submit(Report(category, description))) {
         return false;
     }
     vector<Report> reports = storage->all();
-    const Report& report = reports.back();  // the report that was just saved
+    const Report& report = reports.back();  // raportul abia salvat
 
-    // Step 2 (lab 2, Builder): make the work order. An urgent problem gets a high priority and
-    // 2 days, the others keep the default values from the settings.
+    // Pasul 2: ordinul de lucru (Builder)
     WorkOrderBuilder builder(report, address);
     if (urgent) {
         builder.setPriority("High").setDeadline(2);
@@ -49,11 +47,10 @@ bool CityHall::reportProblem(const string& category, const string& description,
     WorkOrder order = builder.build();
     orderPrinter.print(order);
 
-    // The work order says "2 days", and the calendar (the adapter) gives the real date.
+    // The adapter gives the real date
     cout << "  done by:  " << calendar->dateIn(order.deadlineDays) << "\n";
 
-    // Step 3 (lab 2, Object Pool and Factory Method): borrow a truck, let the department of the
-    // category send its crew, and give the truck back when the job is done.
+    // Step 3: truck, crew, truck back
     Truck* truck = trucks.acquire();
     if (truck == nullptr) {
         cout << "No truck is free, so the work order waits.\n";

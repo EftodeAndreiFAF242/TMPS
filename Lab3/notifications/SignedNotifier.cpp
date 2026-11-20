@@ -7,6 +7,6 @@ using namespace std;
 SignedNotifier::SignedNotifier(Notifier* wrapped) : NotifierDecorator(wrapped) {}
 
 void SignedNotifier::send(const string& message) {
-    // The added part: the signature. Sending the message is still the wrapped notifier's job.
+    // Add the signature, then pass on
     NotifierDecorator::send(message + " -- Chisinau City Hall");
 }

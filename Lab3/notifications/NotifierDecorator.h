@@ -6,13 +6,12 @@
 
 #include "Lab1/notifications/Notifier.h"
 
-// A notifier that wraps another notifier and adds something to what it does. It is a Notifier
-// itself, so a wrapped notifier can be used anywhere a plain one can, and it can be wrapped again.
+// Wraps a notifier and adds something
 class NotifierDecorator : public Notifier {
 public:
     explicit NotifierDecorator(Notifier* wrapped);
 
-    // Passes the message on to the wrapped notifier.
+    // Passes the message on
     void send(const std::string& message) override;
 
 private:

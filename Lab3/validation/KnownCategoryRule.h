@@ -9,9 +9,7 @@
 
 class Department;
 
-// The category of a report has to be one that a department of city hall takes care of. The rule
-// looks at the departments city hall was given, so a new department brings its category with it,
-// and no list of categories has to be changed.
+// Categoria trebuie să aibă un departament
 class KnownCategoryRule : public Rule {
 public:
     explicit KnownCategoryRule(const std::map<std::string, const Department*>* departments);

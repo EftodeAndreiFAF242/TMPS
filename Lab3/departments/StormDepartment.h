@@ -7,8 +7,7 @@
 #include "Lab2/crews/Crew.h"
 #include "Lab2/departments/Department.h"
 
-// Takes care of the damage after a storm. A storm leaves holes in the road and branches and trash
-// everywhere, so this department sends a team: the road crew and the garbage crew together.
+// After a storm: road and garbage crews
 class StormDepartment : public Department {
 public:
     std::unique_ptr<Crew> createCrew() const override;

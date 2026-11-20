@@ -4,8 +4,7 @@
 
 #include <string>
 
-// What the project needs from a calendar: the date that is a number of days from today, written
-// the way people here read it, for example 22.11.2026.
+// Dates the project needs, like 22.11.2026
 class Calendar {
 public:
     virtual ~Calendar() {}

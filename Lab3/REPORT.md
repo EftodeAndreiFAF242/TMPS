@@ -159,24 +159,20 @@ classDiagram
 
 ```cpp
 string SystemCalendar::dateIn(int days) const {
-    // Calendar has one call, and the C library needs three: split the time into a date, move the
-    // date, and write it as text. localtime gives a pointer to a struct tm that the C library
-    // shares with everyone, or nullptr when it fails, so the adapter checks it and copies it.
+    // Despărțim timpul în zi, lună, an
     tm* parts = localtime(&today);
     if (parts == nullptr) {
         return "unknown date";
     }
     tm date = *parts;
 
-    // The C library has no "add days". The days are added to the day of the month, and mktime
-    // turns an impossible date, like 32 November, into the right one, 2 December.
+    // Add the days, mktime fixes them
     date.tm_mday += days;
     if (mktime(&date) == -1) {
         return "unknown date";
     }
 
-    // strftime writes C-style text into a buffer we give it, and returns 0 when the text does not
-    // fit. "22.11.2026" has 10 characters, plus the zero that ends C-style text.
+    // Write the date into a buffer
     char text[11];
     if (strftime(text, sizeof(text), "%d.%m.%Y", &date) == 0) {
         return "unknown date";
@@ -285,12 +281,12 @@ void NotifierDecorator::send(const string& message) {
 }
 
 void SignedNotifier::send(const string& message) {
-    // The added part: the signature. Sending the message is still the wrapped notifier's job.
+    // Add the signature, then pass on
     NotifierDecorator::send(message + " -- Chisinau City Hall");
 }
 
 void ArchivedNotifier::send(const string& message) {
-    // The added part: the copy. Sending the message is still the wrapped notifier's job.
+    // Întâi copia, apoi trimitem mesajul
     archive->add(message);
     NotifierDecorator::send(message);
 }
@@ -387,15 +383,14 @@ classDiagram
 
 ```cpp
 void CrewTeam::add(unique_ptr<Crew> member) {
-    // A unique_ptr can't be copied, only moved, so the team becomes the only owner of the crew.
+    // unique_ptr can only be moved
     members.push_back(move(member));
 }
 
 void CrewTeam::work(const WorkOrder& order) const {
     cout << "a team of " << members.size() << " crews goes out:\n";
 
-    // The team does not do the job itself and never asks what kind of crew a member is. It calls
-    // work() on each member, and a member that is a team does the same with its own crews.
+    // Fiecare echipaj își face treaba
     for (const unique_ptr<Crew>& member : members) {
         cout << "  - ";
         member->work(order);

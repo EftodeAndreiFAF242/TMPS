@@ -6,7 +6,7 @@
 
 #include "Lab3/notifications/NotifierDecorator.h"
 
-// Signs every message, so the citizen knows it really comes from city hall.
+// Semnează fiecare mesaj al primăriei
 class SignedNotifier : public NotifierDecorator {
 public:
     explicit SignedNotifier(Notifier* wrapped);

@@ -5,12 +5,12 @@
 #include <string>
 #include <vector>
 
-// The archive of city hall: a copy of every message it sent to the citizens.
+// The archive of sent messages
 class MessageArchive {
 public:
     void add(const std::string& message);
 
-    // Every message in the archive, in the order they were added.
+    // Toate mesajele, în ordinea lor
     const std::vector<std::string>& all() const;
 
 private:

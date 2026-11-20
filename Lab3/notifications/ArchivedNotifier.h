@@ -8,9 +8,7 @@
 
 class MessageArchive;
 
-// Keeps a copy of every message in the archive of city hall, so city hall can see later what it
-// told the citizens. The archive is given from outside, so this class has only send(), like every
-// other notifier, and whoever reads the archive does not need to know which notifier wrote it.
+// Keeps a copy of every message
 class ArchivedNotifier : public NotifierDecorator {
 public:
     ArchivedNotifier(Notifier* wrapped, MessageArchive* archive);

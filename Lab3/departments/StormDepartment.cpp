@@ -13,7 +13,6 @@ unique_ptr<Crew> StormDepartment::createCrew() const {
     team->add(make_unique<RoadCrew>());
     team->add(make_unique<GarbageCrew>());
 
-    // A team is a Crew, so it is returned like any other crew, and Department::handle() from
-    // lab 2 sends it out without knowing that it is a team.
+    // Echipa se trimite ca un echipaj
     return team;
 }

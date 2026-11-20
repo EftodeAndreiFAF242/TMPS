@@ -312,8 +312,7 @@ void runLab2Input(ReportStorage& storage) {
     department->handle(order);
 }
 
-// Laboratory work 3: structural design patterns.
-// The reports are saved in the same storage as in lab 2, because it is one system.
+// Lab 3: the structural patterns demo
 void runLab3(ReportStorage& storage) {
     cout << "\n=== Laboratory work 3: Structural design patterns ===\n";
 
@@ -323,11 +322,10 @@ void runLab3(ReportStorage& storage) {
     validator.addRule(&categoryRule);
     validator.addRule(&descriptionRule);
 
-    // ---- 1. Adapter: the dates of Calendar come from the time functions of the C library ----
+    // ---- 1. Adapter: dates from <ctime> ----
     cout << "\n--- 1. Adapter ---\n";
 
-    // The rest of the program knows only Calendar. The adapter turns its one call into the
-    // C library's localtime, mktime and strftime.
+    // Restul programului vede doar Calendar
     SystemCalendar calendar(time(nullptr));
     const Calendar* dates = &calendar;
 
@@ -336,11 +334,10 @@ void runLab3(ReportStorage& storage) {
     cout << "A normal work order (7 days) must be done by " << dates->dateIn(7) << ".\n";
     cout << "In 45 days it is " << dates->dateIn(45) << ": mktime moved the date into the right month.\n";
 
-    // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
+    // ---- 2. Decorator: semnătură și arhivă ----
     cout << "\n--- 2. Decorator ---\n";
 
-    // The archive is a list of its own. ArchivedNotifier only writes into it, so the decorator
-    // has nothing more than send(), and main reads the list without knowing who wrote it.
+    // The archive is a separate list
     MessageArchive archive;
     EmailNotifier email;
     SignedNotifier signedEmail(&email);
@@ -360,11 +357,10 @@ void runLab3(ReportStorage& storage) {
         cout << "  - " << message << "\n";
     }
 
-    // ---- 3. Composite: a team of crews is sent out exactly like one crew ----
+    // ---- 3. Composite: a team like one crew ----
     cout << "\n--- 3. Composite ---\n";
 
-    // The report is saved straight into the storage here, to show only the crews. Section 4 sends
-    // a storm report through city hall, with every check.
+    // Salvat direct, doar pentru echipaje
     storage.add(Report("Storm damage", "A tree fell across Grenoble St. after the storm"));
     vector<Report> savedReports = storage.all();
     WorkOrder stormOrder = WorkOrderBuilder(savedReports.back(), "Grenoble St. 120")
@@ -385,15 +381,13 @@ void runLab3(ReportStorage& storage) {
     bigTeam.add(stormDepartment.createCrew());
     bigTeam.work(stormOrder);
 
-    // ---- 4. Facade: main only calls reportProblem(), and city hall does every step behind it ----
+    // ---- 4. Facade: one call does everything ----
     cout << "\n--- 4. Facade ---\n";
 
-    // City hall gets the archived and signed e-mail notifier and the calendar adapter, so the
-    // patterns work together on every report.
+    // Toate cele patru modele lucrează împreună
     CityHall cityHall(&storage, &archivedEmail, &calendar);
 
-    // main tells city hall which department takes care of which category. A new department is
-    // one more class and one more line here, and the code of CityHall does not change.
+    // Departament nou = o clasă, o linie
     RoadDepartment roads;
     LightingDepartment lighting;
     SanitationDepartment sanitation;
@@ -422,7 +416,7 @@ void runLab3(ReportStorage& storage) {
     }
 }
 
-// Laboratory work 3 with your own data: the reports typed in the console go through city hall.
+// Lab 3 with reports typed by you
 void runLab3Input(ReportStorage& storage) {
     cout << "\n=== Laboratory work 3: your own reports ===\n";
 
@@ -433,15 +427,15 @@ void runLab3Input(ReportStorage& storage) {
         notifier = &emailNotifier;
     }
 
-    // Decorator: whatever the channel is, every message is signed and archived.
+    // Decorator: fiecare mesaj semnat și arhivat
     MessageArchive archive;
     SignedNotifier signedNotifier(notifier);
     ArchivedNotifier archivedNotifier(&signedNotifier, &archive);
 
-    // Adapter: the dates of the work orders come from the C library, through SystemCalendar.
+    // Adapter: dates from the C library
     SystemCalendar calendar(time(nullptr));
 
-    // Facade: from here on, main only talks to city hall.
+    // Facade: main talks only to city hall
     CityHall cityHall(&storage, &archivedNotifier, &calendar);
     RoadDepartment roads;
     LightingDepartment lighting;

@@ -17,29 +17,24 @@ class Department;
 class Notifier;
 class ReportStorage;
 
-// City hall as the citizen sees it: one call to report a problem. Behind that call it checks
-// and saves the report, makes a work order with the date it must be done by and sends a crew
-// with a truck, so the client does not have to know the classes of lab 1, lab 2 and lab 3 or the
-// order they are used in.
+// Un singur apel pentru tot sistemul
 class CityHall {
 public:
-    // City hall gets the storage, the way citizens are told and the calendar, and makes the rest itself.
+    // Gets storage, notifier and calendar
     CityHall(ReportStorage* storage, Notifier* notifier, const Calendar* calendar);
 
-    // Tells city hall which department takes care of a category, and from then on the category is
-    // known. A new department is a new class and one more call to this method, and the code of
-    // CityHall stays the same.
+    // The department brings its category
     void addDepartment(const std::string& category, const Department* department);
 
-    // Handles a problem from start to end. Returns false if the report was refused.
+    // Tratează problema de la început la sfârșit
     bool reportProblem(const std::string& category, const std::string& description,
                        const std::string& address, bool urgent);
 
 private:
     ReportStorage* storage;
-    const Calendar* calendar;                               // any calendar: the adapter in main
-    std::map<std::string, const Department*> departments;  // the category and its department
-    KnownCategoryRule categoryRule;                         // knows the categories from departments
+    const Calendar* calendar;                               // any calendar, here the adapter
+    std::map<std::string, const Department*> departments;  // categoria și departamentul ei
+    KnownCategoryRule categoryRule;                         // categories come from the departments
     DescriptionRule descriptionRule;
     Validator validator;
     ReportService reportService;
