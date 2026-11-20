@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "Lab1/notifications/ConsoleNotifier.h"
-#include "Lab1/notifications/EmailNotifier.h"
 #include "Lab1/notifications/Notifier.h"
 #include "Lab1/storage/ReportStorage.h"
 #include "Lab2/crews/Crew.h"
@@ -22,13 +21,7 @@
 #include "Lab2/workorders/WorkOrder.h"
 #include "Lab3/crews/CrewTeam.h"
 #include "Lab3/departments/StormDepartment.h"
-#include "Lab3/map/CityMap.h"
-#include "Lab3/map/MarkerStyle.h"
-#include "Lab3/map/MarkerStyleFactory.h"
-#include "Lab3/messages/CrewComingMessage.h"
-#include "Lab3/messages/WorkDoneMessage.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
-#include "Lab3/notifications/ConsentNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
@@ -182,104 +175,6 @@ void testDecoratorWrapsTheAdapter() {
     remove("test_letters.txt");
 }
 
-// ---- Proxy: ConsentNotifier controls the access to the real notifier ----
-
-void testProxyPassesTheMessageUnchangedWithConsent() {
-    RecordingNotifier realNotifier;
-    ConsentNotifier proxy(&realNotifier, true);
-    Notifier* notifier = &proxy;  // used only through the interface, like ReportService does
-
-    notifier->send("Report #1 was registered.");
-
-    check("Proxy: with consent, the real notifier gets the message exactly as it was sent",
-          realNotifier.messages.size() == 1 && realNotifier.messages[0] == "Report #1 was registered.");
-}
-
-void testProxyBlocksTheMessageWithoutConsent() {
-    RecordingNotifier realNotifier;
-    ConsentNotifier proxy(&realNotifier, false);
-
-    startCapture();
-    proxy.send("Report #1 was registered.");
-    string screen = stopCapture();
-
-    check("Proxy: without consent, the real notifier is never called, and the screen says why",
-          realNotifier.messages.empty() && screen.find("not sent") != string::npos);
-}
-
-void testProxyStopsTheLetterBeforeTheCLibrary() {
-    remove("test_letters.txt");
-    LetterNotifier letters("test_letters.txt", "Maria Rusu, 3 Columna St.");
-    ConsentNotifier proxy(&letters, false);
-    SignedNotifier signedProxy(&proxy);  // the proxy is a Notifier, so a decorator can wrap it
-
-    startCapture();
-    signedProxy.send("Report #2 was registered.");
-    stopCapture();
-
-    check("Proxy: inside the decorators, a refused letter never reaches fopen, so no file is written",
-          readFile("test_letters.txt").empty());
-    remove("test_letters.txt");
-}
-
-// ---- Bridge: CitizenMessage (what to say) keeps a Notifier (how it travels) ----
-
-// A work order like the ones city hall makes, for the bridge tests.
-WorkOrder potholeOrder() {
-    WorkOrder order;
-    order.reportId = 3;
-    order.address = "Ismail St. 40";
-    order.deadlineDays = 2;
-    return order;
-}
-
-void testOneMessageTravelsThroughTwoChannels() {
-    ConsoleNotifier console;
-    EmailNotifier email;
-    WorkDoneMessage byConsole(&console);
-    WorkDoneMessage byEmail(&email);
-
-    startCapture();
-    byConsole.sendAbout(potholeOrder());
-    byEmail.sendAbout(potholeOrder());
-    string screen = stopCapture();
-
-    check("Bridge: the same kind of message travels through two different channels",
-          screen == "[console] The work at Ismail St. 40 is done. Thank you for report #3.\n"
-                    "[e-mail] The work at Ismail St. 40 is done. Thank you for report #3.\n");
-}
-
-void testTwoMessagesUseTheSameChannel() {
-    RecordingNotifier channel;
-    CrewComingMessage crewComing(&channel);
-    WorkDoneMessage workDone(&channel);
-
-    crewComing.sendAbout(potholeOrder());
-    workDone.sendAbout(potholeOrder());
-
-    check("Bridge: two kinds of message use the same channel, each one with its own text",
-          channel.messages.size() == 2
-              && channel.messages[0] == "A crew is on its way to Ismail St. 40. The work will be done within 2 days."
-              && channel.messages[1] == "The work at Ismail St. 40 is done. Thank you for report #3.");
-}
-
-void testCityHallTellsTheCitizenAtEveryStep() {
-    ReportStorage storage;
-    RecordingNotifier recorder;
-
-    startCapture();
-    CityHall cityHall(&storage, &recorder);
-    RoadDepartment roads;
-    cityHall.addDepartment("Pothole", &roads);
-    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
-    stopCapture();
-
-    check("Bridge: city hall tells the citizen: registered, then crew on its way, then work done",
-          recorder.messages.size() == 3 && recorder.messages[0] == "Report #1 was registered."
-              && recorder.messages[1] == "A crew is on its way to Ismail St. 40. The work will be done within 2 days."
-              && recorder.messages[2] == "The work at Ismail St. 40 is done. Thank you for report #1.");
-}
-
 // ---- Composite: CrewTeam is a Crew made of other crews ----
 
 // What a crew writes on the screen when it does a work order. It takes any Crew, so it is the same
@@ -339,86 +234,6 @@ void testStormDepartmentSendsATeamThroughCityHall() {
     check("Composite: city hall sends the storm team the same way it sends one crew",
           accepted && screen.find("a team of 2 crews goes out") != string::npos
               && comesBefore(screen, "the road crew fills the pothole", "the garbage crew cleans up"));
-}
-
-// ---- Flyweight: the markers of the city map share one MarkerStyle per category ----
-
-// How many times a text appears in another text.
-int countOf(const string& text, const string& part) {
-    int count = 0;
-    size_t position = text.find(part);
-    while (position != string::npos) {
-        count++;
-        position = text.find(part, position + 1);
-    }
-    return count;
-}
-
-void testSameCategoryGivesTheSameStyle() {
-    MarkerStyleFactory factory;
-
-    startCapture();
-    const MarkerStyle* first = factory.get("Pothole");
-    const MarkerStyle* second = factory.get("Pothole");
-    const MarkerStyle* garbage = factory.get("Garbage");
-    stopCapture();
-
-    check("Flyweight: two requests for the same category return the same instance",
-          first == second && first != garbage && factory.count() == 2);
-}
-
-void testManyMarkersShareFewStyles() {
-    CityMap map;
-    string categories[] = {"Pothole", "Street light", "Garbage", "Storm damage"};
-
-    startCapture();
-    for (int i = 0; i < 10000; i++) {
-        map.addMarker(i + 1, categories[i % 4], "Stefan cel Mare Blvd. " + to_string(i % 200 + 1));
-    }
-    string screen = stopCapture();
-
-    // The measurement: the memory the icons take with sharing and without it.
-    int sharedKilobytes = map.styleCount() * MarkerStyle::ICON_SIZE / 1024;
-    int ownKilobytes = map.markerCount() * MarkerStyle::ICON_SIZE / 1024;
-    check("Flyweight: 10000 markers in 4 categories make only 4 styles, each icon is loaded once",
-          map.markerCount() == 10000 && map.styleCount() == 4 && countOf(screen, "was loaded") == 4);
-    check("Flyweight: the icons take " + to_string(sharedKilobytes) + " KB instead of "
-              + to_string(ownKilobytes) + " KB",
-          sharedKilobytes == 16 && ownKilobytes == 40000);
-}
-
-void testAddressStaysOutsideTheStyle() {
-    CityMap map;
-
-    startCapture();
-    map.addMarker(1, "Pothole", "Ismail St. 40");
-    map.addMarker(2, "Pothole", "Dacia Blvd. 5");
-    map.show();
-    string screen = stopCapture();
-
-    check("Flyweight: one shared style draws two markers at two addresses, it does not keep them",
-          map.styleCount() == 1 && screen.find("[Pothole] report #1 at Ismail St. 40") != string::npos
-              && screen.find("[Pothole] report #2 at Dacia Blvd. 5") != string::npos);
-}
-
-void testCityHallPutsEveryAcceptedReportOnTheMap() {
-    ReportStorage storage;
-    RecordingNotifier recorder;
-
-    startCapture();
-    CityHall cityHall(&storage, &recorder);
-    RoadDepartment roads;
-    cityHall.addDepartment("Pothole", &roads);
-    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
-    cityHall.reportProblem("Pothole", "Hole", "Dacia Blvd. 5", false);
-    string before = stopCapture();
-    startCapture();
-    cityHall.showMap();
-    string map = stopCapture();
-
-    check("Flyweight: city hall puts the accepted report on its map, and not the refused one",
-          map.find("[Pothole] report #1 at Ismail St. 40") != string::npos
-              && map.find("Dacia Blvd. 5") == string::npos && countOf(before, "was loaded") == 1);
 }
 
 // ---- Facade: CityHall hides the classes of lab 1 and lab 2 behind reportProblem() ----
@@ -510,31 +325,15 @@ int main() {
     testLettersAreAddedAtTheEnd();
     testFileThatCannotBeOpenedIsReported();
 
-    cout << "\n--- Proxy ---\n";
-    testProxyPassesTheMessageUnchangedWithConsent();
-    testProxyBlocksTheMessageWithoutConsent();
-    testProxyStopsTheLetterBeforeTheCLibrary();
-
     cout << "\n--- Decorator ---\n";
     testSignatureIsAdded();
     testDecoratorsWorkInAnyOrder();
     testDecoratorWrapsTheAdapter();
 
-    cout << "\n--- Bridge ---\n";
-    testOneMessageTravelsThroughTwoChannels();
-    testTwoMessagesUseTheSameChannel();
-    testCityHallTellsTheCitizenAtEveryStep();
-
     cout << "\n--- Composite ---\n";
     testTeamAndSingleCrewUseTheSameInterface();
     testTeamInsideATeam();
     testStormDepartmentSendsATeamThroughCityHall();
-
-    cout << "\n--- Flyweight ---\n";
-    testSameCategoryGivesTheSameStyle();
-    testManyMarkersShareFewStyles();
-    testAddressStaysOutsideTheStyle();
-    testCityHallPutsEveryAcceptedReportOnTheMap();
 
     cout << "\n--- Facade ---\n";
     testAcceptedReportGoesThroughEveryStepInOrder();

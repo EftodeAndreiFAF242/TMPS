@@ -19,8 +19,6 @@ CityHall::CityHall(ReportStorage* storage, Notifier* notifier)
     : storage(storage),
       categoryRule(&departments),
       reportService(storage, &validator, notifier),
-      crewComingMessage(notifier),
-      workDoneMessage(notifier),
       trucks(AppConfig::getInstance().getTruckCount()) {
     validator.addRule(&categoryRule);
     validator.addRule(&descriptionRule);
@@ -49,25 +47,15 @@ bool CityHall::reportProblem(const string& category, const string& description,
     WorkOrder order = builder.build();
     orderPrinter.print(order);
 
-    // The report goes on the city map. Its marker shares the style of its category (Flyweight).
-    cityMap.addMarker(report.id, category, address);
-
     // Step 3 (lab 2, Object Pool and Factory Method): borrow a truck, let the department of the
-    // category send its crew, and give the truck back when the job is done. The citizen is told
-    // before and after (Bridge: the message says what, the notifier decides how it travels).
+    // category send its crew, and give the truck back when the job is done.
     Truck* truck = trucks.acquire();
     if (truck == nullptr) {
         cout << "No truck is free, so the work order waits.\n";
         return true;
     }
-    crewComingMessage.sendAbout(order);
     cout << "Truck #" << truck->number << " goes out. ";
     departments[category]->handle(order);
     trucks.release(truck);
-    workDoneMessage.sendAbout(order);
     return true;
-}
-
-void CityHall::showMap() const {
-    cityMap.show();
 }
