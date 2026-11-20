@@ -5,10 +5,14 @@
 On ELSE: *Laboratory work #2 — Structural Design Patterns*. The report is in
 **[REPORT.md](REPORT.md)**.
 
-Lab 3 adds three structural patterns to the city reports project from labs 1 and 2:
+Lab 3 adds all seven structural patterns to the city reports project from labs 1 and 2:
 
 - **Adapter**: `LetterNotifier` writes paper letters with the C standard library (`<cstdio>`);
+- **Proxy**: `ConsentNotifier` lets a letter through only if the citizen agreed to get letters;
 - **Decorator**: `SignedNotifier` and `ArchivedNotifier` sign every message and keep a copy of it;
+- **Bridge**: `CrewComingMessage` and `WorkDoneMessage` (what to say) travel through any `Notifier` (how);
+- **Composite**: `CrewTeam` is a team of crews, sent by `StormDepartment` the same way as one crew;
+- **Flyweight**: the markers of `CityMap` share one `MarkerStyle` per category;
 - **Facade**: `CityHall` handles a report from start to end with one call.
 
 ## Build and run
@@ -28,9 +32,11 @@ g++ -std=c++17 -I. main.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp -o tmps
 ./tmps
 ```
 
-In the menu, option **5** runs the ready example of lab 3, and option **6** lets you type
-your own reports and choose how the citizen is told (console, e-mail or paper letter). The
-letters are written into `letters.txt`, in the folder the program runs from.
+In the menu, option **5** runs the ready example of lab 3, one section per pattern, and
+option **6** lets you type your own reports and choose how the citizen is told (console,
+e-mail or paper letter, and for a letter, whether the citizen agreed to get letters). The
+known categories are Pothole, Street light, Garbage and Storm damage. The letters are written
+into `letters.txt`, in the folder the program runs from.
 
 ## Run the unit tests
 
@@ -46,8 +52,8 @@ or, after the CMake build above:
 ctest --test-dir build --output-on-failure
 ```
 
-The tests are a plain C++ program, without a test framework: 12 tests, at least two for each
-pattern. It prints `[PASS]` or `[FAIL]` for every test and returns 0 when all of them pass.
+The tests are a plain C++ program, without a test framework: 28 tests, at least three for
+each pattern. It prints `[PASS]` or `[FAIL]` for every test and returns 0 when all of them pass.
 
 ## Files
 
@@ -57,9 +63,26 @@ Lab3/
   REPORT.md                the report
   notifications/
     LetterNotifier         Adapter: Notifier -> the C library's fopen, fputs, fclose
+    ConsentNotifier        Proxy: lets the message reach the real notifier only with consent
     NotifierDecorator      Decorator: the base class of every notifier that wraps another one
     SignedNotifier         Concrete Decorator: adds the city hall signature
     ArchivedNotifier       Concrete Decorator: keeps a copy of every message
+    MessageArchive         the list ArchivedNotifier writes the copies into
+  messages/
+    CitizenMessage         Bridge: the Abstraction, keeps a Notifier (the Implementor)
+    CrewComingMessage      Refined Abstraction: a crew is on its way
+    WorkDoneMessage        Refined Abstraction: the work is done
+  crews/
+    CrewTeam               Composite: a team of crews that works like one crew
+  departments/
+    StormDepartment        a Factory Method creator (lab 2) that makes a CrewTeam
+  map/
+    MarkerStyle            Flyweight: the shared look of the markers of one category
+    MarkerStyleFactory     Flyweight Factory: one MarkerStyle per category
+    Marker                 one marker: report number and address, and its shared style
+    CityMap                the city map, keeps the markers
+  validation/
+    KnownCategoryRule      knows the categories from the departments of city hall
   services/
     CityHall               Facade: one entry point for everything city hall does with a report
 tests/
