@@ -14,6 +14,7 @@
 #include "Lab2/departments/RoadDepartment.h"
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
+#include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
 
@@ -130,13 +131,15 @@ void testSignatureIsAdded() {
 void testDecoratorsWorkInAnyOrder() {
     // Order 1: the archive is outside the signature, so it keeps the text before it is signed.
     RecordingNotifier recorder1;
+    MessageArchive archive1;
     SignedNotifier signed1(&recorder1);
-    ArchivedNotifier archiveOutside(&signed1);
+    ArchivedNotifier archiveOutside(&signed1, &archive1);
     archiveOutside.send("Hello");
 
     // Order 2: the signature is outside the archive, so the archive keeps the signed text.
     RecordingNotifier recorder2;
-    ArchivedNotifier archiveInside(&recorder2);
+    MessageArchive archive2;
+    ArchivedNotifier archiveInside(&recorder2, &archive2);
     SignedNotifier signed2(&archiveInside);
     signed2.send("Hello");
 
@@ -144,9 +147,8 @@ void testDecoratorsWorkInAnyOrder() {
           recorder1.messages.size() == 1 && recorder1.messages[0] == "Hello -- Chisinau City Hall"
               && recorder2.messages.size() == 1 && recorder2.messages[0] == "Hello -- Chisinau City Hall");
     check("Decorator: the order of the decorators decides what the archive keeps",
-          archiveOutside.getHistory().size() == 1 && archiveOutside.getHistory()[0] == "Hello"
-              && archiveInside.getHistory().size() == 1
-              && archiveInside.getHistory()[0] == "Hello -- Chisinau City Hall");
+          archive1.all().size() == 1 && archive1.all()[0] == "Hello"
+              && archive2.all().size() == 1 && archive2.all()[0] == "Hello -- Chisinau City Hall");
 }
 
 void testDecoratorWrapsTheAdapter() {

@@ -34,6 +34,7 @@
 
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/LetterNotifier.h"
+#include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
 
@@ -333,8 +334,11 @@ void runLab3(ReportStorage& storage) {
     // ---- 2. Decorator: notifiers get a signature and an archive, and their code stays the same ----
     cout << "\n--- 2. Decorator ---\n";
 
+    // The archive is a list of its own. ArchivedNotifier only writes into it, so the decorator
+    // has nothing more than send(), and main reads the list without knowing who wrote it.
+    MessageArchive archive;
     SignedNotifier signedLetters(&letters);
-    ArchivedNotifier archivedLetters(&signedLetters);
+    ArchivedNotifier archivedLetters(&signedLetters, &archive);
 
     cout << "The letter notifier, wrapped so every message is signed and kept in the archive:\n";
     ReportService decoratedService(&storage, &validator, &archivedLetters);
@@ -345,8 +349,8 @@ void runLab3(ReportStorage& storage) {
     SignedNotifier signedEmail(&email);
     signedEmail.send("The street lights on Ion Creanga St. were repaired.");
 
-    cout << "The archive kept " << archivedLetters.getHistory().size() << " message(s):\n";
-    for (const string& message : archivedLetters.getHistory()) {
+    cout << "The archive kept " << archive.all().size() << " message(s):\n";
+    for (const string& message : archive.all()) {
         cout << "  - " << message << "\n";
     }
 
@@ -376,7 +380,7 @@ void runLab3(ReportStorage& storage) {
     cityHall.reportProblem("Aliens", "Help", "Nowhere", false);
 
     cout << "\nEvery letter city hall sent in this example:\n";
-    for (const string& message : archivedLetters.getHistory()) {
+    for (const string& message : archive.all()) {
         cout << "  - " << message << "\n";
     }
     cout << "The letters are in the file letters.txt, ready for the post office.\n";
@@ -405,8 +409,9 @@ void runLab3Input(ReportStorage& storage) {
     }
 
     // Decorator: whatever the channel is, every message is signed and archived.
+    MessageArchive archive;
     SignedNotifier signedNotifier(notifier);
-    ArchivedNotifier archivedNotifier(&signedNotifier);
+    ArchivedNotifier archivedNotifier(&signedNotifier, &archive);
 
     // Facade: from here on, main only talks to city hall.
     CityHall cityHall(&storage, &archivedNotifier);
@@ -430,7 +435,7 @@ void runLab3Input(ReportStorage& storage) {
     }
 
     cout << "\nEvery message city hall sent:\n";
-    for (const string& message : archivedNotifier.getHistory()) {
+    for (const string& message : archive.all()) {
         cout << "  - " << message << "\n";
     }
 }

@@ -2,16 +2,16 @@
 
 #include "Lab3/notifications/ArchivedNotifier.h"
 
+#include "Lab3/notifications/MessageArchive.h"
+
 using namespace std;
 
-ArchivedNotifier::ArchivedNotifier(Notifier* wrapped) : NotifierDecorator(wrapped) {}
+ArchivedNotifier::ArchivedNotifier(Notifier* wrapped, MessageArchive* archive) : NotifierDecorator(wrapped) {
+    this->archive = archive;
+}
 
 void ArchivedNotifier::send(const string& message) {
     // The added part: the copy. Sending the message is still the wrapped notifier's job.
-    history.push_back(message);
+    archive->add(message);
     NotifierDecorator::send(message);
-}
-
-const vector<string>& ArchivedNotifier::getHistory() const {
-    return history;
 }

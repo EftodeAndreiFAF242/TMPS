@@ -3,20 +3,20 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "Lab3/notifications/NotifierDecorator.h"
 
-// Keeps a copy of every message, so city hall can see later what it told the citizens.
+class MessageArchive;
+
+// Keeps a copy of every message in the archive of city hall, so city hall can see later what it
+// told the citizens. The archive is given from outside, so this class has only send(), like every
+// other notifier, and whoever reads the archive does not need to know which notifier wrote it.
 class ArchivedNotifier : public NotifierDecorator {
 public:
-    explicit ArchivedNotifier(Notifier* wrapped);
+    ArchivedNotifier(Notifier* wrapped, MessageArchive* archive);
 
     void send(const std::string& message) override;
 
-    // Every message sent through this notifier, in the order they were sent.
-    const std::vector<std::string>& getHistory() const;
-
 private:
-    std::vector<std::string> history;
+    MessageArchive* archive;
 };
