@@ -611,6 +611,92 @@ void runLab4(ReportStorage& storage) {
     }
 }
 
+// Lab 4 with your own report
+void runLab4Input(ReportStorage& storage) {
+    cout << "\n=== Laboratory work 4: your own report ===\n";
+
+    ConsoleNotifier consoleNotifier;
+    EmailNotifier emailNotifier;
+    Notifier* notifier = &consoleNotifier;
+    if (ask("How should the citizen be told? 1 - console, 2 - e-mail: ") == "2") {
+        notifier = &emailNotifier;
+    }
+
+    // Laboratorul 3: semnătură, arhivă, date
+    MessageArchive archive;
+    SignedNotifier signedNotifier(notifier);
+    ArchivedNotifier archivedNotifier(&signedNotifier, &archive);
+    SystemCalendar calendar(time(nullptr));
+    CityHall cityHall(&storage, &archivedNotifier, &calendar);
+    RoadDepartment roads;
+    LightingDepartment lighting;
+    SanitationDepartment sanitation;
+    StormDepartment storm;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.addDepartment("Street light", &lighting);
+    cityHall.addDepartment("Garbage", &sanitation);
+    cityHall.addDepartment("Storm damage", &storm);
+
+    cout << "Known categories: Pothole, Street light, Garbage, Storm damage. "
+            "A description needs at least 10 characters.\n";
+    string category = ask("Category: ");
+    string description = ask("Description: ");
+    string address = ask("Address: ");
+    bool urgent = ask("Is it urgent? (y/n): ") == "y";
+    if (!cityHall.reportProblem(category, description, address, urgent)) {
+        return;
+    }
+
+    // The case follows your report
+    ReportCase reportCase(storage.all().back());
+    CitizenUpdates citizen(&archivedNotifier);
+    CaseLog caseLog(&calendar);
+    reportCase.subscribe(&citizen);
+    reportCase.subscribe(&caseLog);
+    bool citizenSubscribed = true;
+    OperatorDesk desk;
+
+    while (true) {
+        cout << "\nReport #" << reportCase.getReportId() << " is " << reportCase.getStatus() << ".\n";
+        cout << "1 - start the work, 2 - finish the work, 3 - close the case, 4 - reopen the case,\n"
+                "5 - undo the last command, 6 - stop or start the citizen's updates, Enter - stop\n";
+        string choice = ask("Your choice: ");
+        if (choice == "") {
+            break;
+        }
+
+        // Comenzile alese în timpul rulării
+        if (choice == "1") {
+            desk.run(make_unique<StartWorkCommand>(&reportCase));
+        } else if (choice == "2") {
+            desk.run(make_unique<FinishWorkCommand>(&reportCase));
+        } else if (choice == "3") {
+            desk.run(make_unique<CloseCaseCommand>(&reportCase));
+        } else if (choice == "4") {
+            desk.run(make_unique<ReopenCaseCommand>(&reportCase));
+        } else if (choice == "5") {
+            desk.undoLast();
+        } else if (choice == "6") {
+            // Subscribe or leave while running
+            if (citizenSubscribed) {
+                reportCase.unsubscribe(&citizen);
+                cout << "The citizen gets no more updates.\n";
+            } else {
+                reportCase.subscribe(&citizen);
+                cout << "The citizen gets the updates again.\n";
+            }
+            citizenSubscribed = !citizenSubscribed;
+        } else {
+            cout << "There is no such option.\n";
+        }
+    }
+
+    cout << "\nThe city hall log of report #" << reportCase.getReportId() << ":\n";
+    for (const string& line : caseLog.entries()) {
+        cout << "  " << line << "\n";
+    }
+}
+
 int main() {
     // The reports of labs 2 and 3 are kept here for the whole run of the program. main() makes
     // the storage once and gives it to the code that needs it, so it does not have to be a singleton.
@@ -626,6 +712,7 @@ int main() {
         cout << "5. Laboratory work 3 - Structural design patterns (ready example)\n";
         cout << "6. Laboratory work 3 - Structural design patterns (type your own reports)\n";
         cout << "7. Laboratory work 4 - Behavioral design patterns (ready example)\n";
+        cout << "8. Laboratory work 4 - Behavioral design patterns (follow your own report)\n";
         cout << "0. Exit\n";
         cout << "Your choice: ";
 
@@ -649,6 +736,8 @@ int main() {
             runLab3Input(storage);
         } else if (choice == "7") {
             runLab4(storage);
+        } else if (choice == "8") {
+            runLab4Input(storage);
         } else if (choice == "0") {
             break;
         } else {
