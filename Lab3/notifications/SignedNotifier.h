@@ -1,3 +1,4 @@
+// "Add responsibilities to objects dynamically."
 // Lab 3 - Decorator: a Concrete Decorator, adds the city hall signature to every message
 
 #pragma once

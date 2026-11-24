@@ -1,3 +1,4 @@
+// "Add responsibilities to objects dynamically."
 // Lab 3 - Decorator: a Concrete Decorator, keeps a copy of every message that was sent
 
 #pragma once

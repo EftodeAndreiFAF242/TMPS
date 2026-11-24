@@ -1,3 +1,4 @@
+// "Provides a unified interface that represents multiple components."
 // Lab 3 - Facade: the Facade, one simple entry point for everything city hall does with a report
 
 #pragma once

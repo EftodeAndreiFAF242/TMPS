@@ -1,3 +1,4 @@
+// "It lets classes work together, that couldn't otherwise because of incompatible parent classes."
 // Lab 3 - Adapter: the Target, the dates city hall needs, in the form the project wants them
 
 #pragma once

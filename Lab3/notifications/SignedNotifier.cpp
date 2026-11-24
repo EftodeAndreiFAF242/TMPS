@@ -1,3 +1,4 @@
+// "Add responsibilities to objects dynamically."
 // Lab 3 - Decorator: a Concrete Decorator, adds the city hall signature to every message
 
 #include "Lab3/notifications/SignedNotifier.h"

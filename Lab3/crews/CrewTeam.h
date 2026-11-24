@@ -1,3 +1,4 @@
+// "It lets clients treat simple and complex objects uniformly."
 // Lab 3 - Composite: the Composite, a team of crews that works like one crew
 
 #pragma once

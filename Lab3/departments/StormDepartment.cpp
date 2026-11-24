@@ -1,3 +1,4 @@
+// "It lets clients treat simple and complex objects uniformly."
 // Lab 3 - Composite: a Concrete Creator (lab 2's Factory Method) that makes a CrewTeam instead of one crew
 
 #include "Lab3/departments/StormDepartment.h"

@@ -1,3 +1,4 @@
+// "Add responsibilities to objects dynamically."
 // Lab 3 - Decorator: the Decorator, the base class of every notifier that wraps another one
 
 #include "Lab3/notifications/NotifierDecorator.h"

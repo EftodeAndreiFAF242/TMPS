@@ -1,3 +1,4 @@
+// "It lets classes work together, that couldn't otherwise because of incompatible parent classes."
 // Lab 3 - Adapter: the Adapter, gives the dates of Calendar with the time functions of the C library
 
 #pragma once
