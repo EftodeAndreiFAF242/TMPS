@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -15,6 +16,12 @@
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab4/cases/CaseSnapshot.h"
 #include "Lab4/cases/ReportCase.h"
+#include "Lab4/operator/CloseCaseCommand.h"
+#include "Lab4/operator/Command.h"
+#include "Lab4/operator/FinishWorkCommand.h"
+#include "Lab4/operator/OperatorDesk.h"
+#include "Lab4/operator/ReopenCaseCommand.h"
+#include "Lab4/operator/StartWorkCommand.h"
 #include "Lab4/statuses/ClosedState.h"
 #include "Lab4/statuses/FixedState.h"
 #include "Lab4/statuses/InProgressState.h"
@@ -276,6 +283,133 @@ void testRestoreIsToldToTheObservers() {
           recorder.messages.size() == 1 && recorder.messages[0] == "Your report #7 (Pothole) is now Registered.");
 }
 
+// ---- Command: the operator's desk ----
+
+// A new command, only here
+class CountingCommand : public Command {
+public:
+    explicit CountingCommand(int* counter) {
+        this->counter = counter;
+    }
+
+    string name() const override {
+        return "count one more";
+    }
+
+    string execute() override {
+        (*counter)++;
+        return "";
+    }
+
+    void undo() override {
+        (*counter)--;
+    }
+
+private:
+    int* counter;
+};
+
+void testExecuteThenUndoRestoresTheCase() {
+    ReportCase reportCase(potholeReport());
+    OperatorDesk desk;
+
+    startCapture();
+    string done = desk.run(make_unique<StartWorkCommand>(&reportCase));
+    bool inProgress = reportCase.getStatus() == "In progress";
+    desk.undoLast();
+    stopCapture();
+
+    check("Command: executing a command and then undoing it gives back the original case",
+          done == "" && inProgress && reportCase.getStatus() == "Registered" && desk.historySize() == 0);
+}
+
+void testUndoGoesBackStepByStep() {
+    ReportCase reportCase(potholeReport());
+    OperatorDesk desk;
+
+    startCapture();
+    desk.run(make_unique<StartWorkCommand>(&reportCase));
+    desk.run(make_unique<FinishWorkCommand>(&reportCase));
+    desk.run(make_unique<ReopenCaseCommand>(&reportCase));
+    desk.run(make_unique<FinishWorkCommand>(&reportCase));
+    desk.run(make_unique<CloseCaseCommand>(&reportCase));
+    bool closed = reportCase.getStatus() == "Closed" && desk.historySize() == 5;
+
+    // Anulăm de la cea mai nouă
+    desk.undoLast();
+    bool fixed = reportCase.getStatus() == "Fixed";
+    desk.undoLast();
+    desk.undoLast();
+    bool beforeReopen = reportCase.getStatus() == "Fixed" && reportCase.getTimesReopened() == 0;
+    desk.undoLast();
+    desk.undoLast();
+    stopCapture();
+
+    check("Command: undo goes back one command at a time, the newest first",
+          closed && fixed && beforeReopen && reportCase.getStatus() == "Registered");
+}
+
+void testRefusedCommandIsNotKept() {
+    ReportCase reportCase(potholeReport());
+    OperatorDesk desk;
+
+    startCapture();
+    string refusal = desk.run(make_unique<FinishWorkCommand>(&reportCase));
+    string emptyUndo = desk.undoLast();
+    stopCapture();
+
+    check("Command: a command the status refuses is not kept, and undo on an empty desk is safe",
+          refusal == "the work can't be finished, the case is Registered." && desk.historySize() == 0
+              && emptyUndo == "there is nothing to undo" && reportCase.getStatus() == "Registered");
+}
+
+void testDeskWorksWithAnyCommand() {
+    int counter = 0;
+    OperatorDesk desk;
+
+    startCapture();
+    desk.run(make_unique<CountingCommand>(&counter));
+    desk.run(make_unique<CountingCommand>(&counter));
+    desk.undoLast();
+    stopCapture();
+
+    check("Command: OperatorDesk knows only the Command interface, so a new command needs no change in it",
+          is_abstract<Command>::value && is_base_of<Command, StartWorkCommand>::value && counter == 1
+              && desk.historySize() == 1);
+}
+
+// ---- All four patterns on one path ----
+
+void testOneCommandGoesThroughAllFourPatterns() {
+    RecordingNotifier email;
+    MessageArchive archive;
+    SignedNotifier signedEmail(&email);
+    ArchivedNotifier archivedEmail(&signedEmail, &archive);
+    CitizenUpdates citizen(&archivedEmail);
+    CaseLog caseLog(&testCalendar);
+    ReportCase reportCase(potholeReport());
+    reportCase.subscribe(&citizen);
+    reportCase.subscribe(&caseLog);
+    OperatorDesk desk;
+
+    // Comandă, stare, observatori, decoratori
+    startCapture();
+    desk.run(make_unique<StartWorkCommand>(&reportCase));
+    bool told = email.messages.size() == 1
+                && email.messages[0] == "Your report #7 (Pothole) is now In progress. -- Chisinau City Hall"
+                && caseLog.entries().size() == 1
+                && caseLog.entries()[0] == "20.11.2026  report #7 (Pothole): In progress";
+    desk.undoLast();
+    stopCapture();
+
+    check("Together: one command changes the state, and the citizen (signed, lab 3) and the log are told",
+          told);
+    check("Together: undo puts the snapshot back, and the citizen and the log are told again",
+          reportCase.getStatus() == "Registered" && email.messages.size() == 2
+              && email.messages[1] == "Your report #7 (Pothole) is now Registered. -- Chisinau City Hall"
+              && caseLog.entries().size() == 2 && archive.all().size() == 2);
+}
+
 int main() {
     cout << "=== Unit tests of laboratory work 4: behavioral design patterns ===\n";
 
@@ -296,6 +430,15 @@ int main() {
     testLaterChangesDoNotTouchTheSnapshot();
     testOnlyTheCaseCanMakeASnapshot();
     testRestoreIsToldToTheObservers();
+
+    cout << "\n--- Command ---\n";
+    testExecuteThenUndoRestoresTheCase();
+    testUndoGoesBackStepByStep();
+    testRefusedCommandIsNotKept();
+    testDeskWorksWithAnyCommand();
+
+    cout << "\n--- All four together ---\n";
+    testOneCommandGoesThroughAllFourPatterns();
 
     cout << "\n" << testsRun << " tests, " << testsRun - testsFailed << " passed, " << testsFailed
          << " failed.\n";

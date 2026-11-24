@@ -46,6 +46,11 @@
 
 #include "Lab4/cases/CaseSnapshot.h"
 #include "Lab4/cases/ReportCase.h"
+#include "Lab4/operator/CloseCaseCommand.h"
+#include "Lab4/operator/FinishWorkCommand.h"
+#include "Lab4/operator/OperatorDesk.h"
+#include "Lab4/operator/ReopenCaseCommand.h"
+#include "Lab4/operator/StartWorkCommand.h"
 #include "Lab4/updates/CaseLog.h"
 #include "Lab4/updates/CitizenUpdates.h"
 
@@ -568,6 +573,42 @@ void runLab4(ReportStorage& storage) {
     garbageCase.restore(snapshot);
     cout << "It is " << garbageCase.getStatus() << " again, reopened " << garbageCase.getTimesReopened()
          << " time(s). Only the case can read the snapshot, and it did not change, so it can be used again.\n";
+
+    // ---- 4. Command: all four on one path ----
+    cout << "\n--- 4. Command (all four patterns on one path) ---\n";
+    cout << "City hall registers storm damage:\n";
+    cityHall.reportProblem("Storm damage", "A tree fell across Grenoble St. after the storm",
+                           "Grenoble St. 120", true);
+
+    ReportCase stormCase(storage.all().back());
+    stormCase.subscribe(&citizen);
+    stormCase.subscribe(&caseLog);
+
+    // Comandă: copie, stare, anunț
+    OperatorDesk desk;
+    cout << "\nThe operator works on report #" << stormCase.getReportId()
+         << ". Each command saves a snapshot (Memento), the status decides the step (State),\n"
+            "and the citizen and the log are told (Observer):\n";
+    desk.run(make_unique<StartWorkCommand>(&stormCase));
+    desk.run(make_unique<FinishWorkCommand>(&stormCase));
+
+    cout << "The operator closes the case by mistake, before the citizen checked the street:\n";
+    desk.run(make_unique<CloseCaseCommand>(&stormCase));
+    desk.undoLast();
+
+    cout << "A command the status refuses is not kept, so undo would skip it:\n";
+    desk.run(make_unique<StartWorkCommand>(&stormCase));
+
+    cout << "The citizen says there are still branches on the road:\n";
+    desk.run(make_unique<ReopenCaseCommand>(&stormCase));
+    desk.run(make_unique<FinishWorkCommand>(&stormCase));
+    desk.run(make_unique<CloseCaseCommand>(&stormCase));
+    cout << "The desk keeps " << desk.historySize() << " commands that can be undone.\n";
+
+    cout << "\nEvery message city hall sent in this example (the archive of lab 3):\n";
+    for (const string& message : archive.all()) {
+        cout << "  - " << message << "\n";
+    }
 }
 
 int main() {
