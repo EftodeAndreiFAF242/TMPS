@@ -44,6 +44,7 @@
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
 
+#include "Lab4/cases/CaseSnapshot.h"
 #include "Lab4/cases/ReportCase.h"
 #include "Lab4/updates/CaseLog.h"
 #include "Lab4/updates/CitizenUpdates.h"
@@ -546,6 +547,27 @@ void runLab4(ReportStorage& storage) {
 
     cout << "A refused step changes nothing, so nobody is told:\n";
     showStep("Start the work", lightCase.startWork(), lightCase);
+
+    // ---- 3. Memento: a snapshot of a case ----
+    cout << "\n--- 3. Memento ---\n";
+    cout << "City hall registers full garbage bins:\n";
+    cityHall.reportProblem("Garbage", "The garbage bins on Puskin St. are full", "Puskin St. 22", false);
+
+    ReportCase garbageCase(storage.all().back());
+    garbageCase.subscribe(&caseLog);
+
+    // Copia se ia înainte de schimbări
+    CaseSnapshot snapshot = garbageCase.save();
+    cout << "\nA snapshot of report #" << garbageCase.getReportId() << " is saved while the case is "
+         << garbageCase.getStatus() << ". Then the case changes:\n";
+    garbageCase.startWork();
+    garbageCase.finishWork();
+    garbageCase.reopen();
+    cout << "Now it is " << garbageCase.getStatus() << ", reopened " << garbageCase.getTimesReopened()
+         << " time(s). Restore the snapshot:\n";
+    garbageCase.restore(snapshot);
+    cout << "It is " << garbageCase.getStatus() << " again, reopened " << garbageCase.getTimesReopened()
+         << " time(s). Only the case can read the snapshot, and it did not change, so it can be used again.\n";
 }
 
 int main() {

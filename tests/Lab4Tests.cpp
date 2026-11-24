@@ -13,6 +13,7 @@
 #include "Lab3/notifications/ArchivedNotifier.h"
 #include "Lab3/notifications/MessageArchive.h"
 #include "Lab3/notifications/SignedNotifier.h"
+#include "Lab4/cases/CaseSnapshot.h"
 #include "Lab4/cases/ReportCase.h"
 #include "Lab4/statuses/ClosedState.h"
 #include "Lab4/statuses/FixedState.h"
@@ -215,6 +216,66 @@ void testCitizenUpdateGoesThroughTheLab3Decorators() {
               && archive.all().size() == 1 && archive.all()[0] == "Your report #7 (Pothole) is now In progress.");
 }
 
+// ---- Memento: snapshots of a case ----
+
+void testRestoreGivesBackTheExactState() {
+    ReportCase reportCase(potholeReport());
+    reportCase.startWork();
+    reportCase.finishWork();
+    reportCase.reopen();
+    reportCase.finishWork();
+
+    // Fixed, redeschis o dată
+    CaseSnapshot snapshot = reportCase.save();
+    reportCase.close();
+    bool closedBefore = reportCase.getStatus() == "Closed";
+    reportCase.restore(snapshot);
+
+    check("Memento: restore() gives back the exact saved case, its status and how often it was reopened",
+          closedBefore && reportCase.getStatus() == "Fixed" && reportCase.getTimesReopened() == 1);
+    check("Memento: after restore() the restored status decides the next step again",
+          reportCase.close() == "" && reportCase.getStatus() == "Closed");
+}
+
+void testLaterChangesDoNotTouchTheSnapshot() {
+    ReportCase reportCase(potholeReport());
+    CaseSnapshot snapshot = reportCase.save();
+
+    reportCase.startWork();
+    reportCase.finishWork();
+    reportCase.reopen();
+    reportCase.restore(snapshot);
+    bool firstRestore = reportCase.getStatus() == "Registered" && reportCase.getTimesReopened() == 0;
+
+    // Alte schimbări, aceeași copie
+    reportCase.startWork();
+    reportCase.finishWork();
+    reportCase.restore(snapshot);
+
+    check("Memento: changes made after save() do not change the snapshot, it can be restored again",
+          firstRestore && reportCase.getStatus() == "Registered" && reportCase.getTimesReopened() == 0);
+}
+
+void testOnlyTheCaseCanMakeASnapshot() {
+    check("Memento: outside code can keep a copy of a snapshot, but can't make one or fill it in",
+          is_copy_constructible<CaseSnapshot>::value && !is_default_constructible<CaseSnapshot>::value
+              && !is_constructible<CaseSnapshot, const ReportState*, int>::value);
+}
+
+void testRestoreIsToldToTheObservers() {
+    RecordingNotifier recorder;
+    CitizenUpdates citizen(&recorder);
+    ReportCase reportCase(potholeReport());
+    CaseSnapshot snapshot = reportCase.save();
+    reportCase.startWork();
+    reportCase.subscribe(&citizen);
+
+    reportCase.restore(snapshot);
+
+    check("Memento: after restore() the observers are told the status that came back",
+          recorder.messages.size() == 1 && recorder.messages[0] == "Your report #7 (Pothole) is now Registered.");
+}
+
 int main() {
     cout << "=== Unit tests of laboratory work 4: behavioral design patterns ===\n";
 
@@ -229,6 +290,12 @@ int main() {
     testUnsubscribedObserverIsNotTold();
     testRefusedStepTellsNobody();
     testCitizenUpdateGoesThroughTheLab3Decorators();
+
+    cout << "\n--- Memento ---\n";
+    testRestoreGivesBackTheExactState();
+    testLaterChangesDoNotTouchTheSnapshot();
+    testOnlyTheCaseCanMakeASnapshot();
+    testRestoreIsToldToTheObservers();
 
     cout << "\n" << testsRun << " tests, " << testsRun - testsFailed << " passed, " << testsFailed
          << " failed.\n";

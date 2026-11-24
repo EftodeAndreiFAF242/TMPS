@@ -1,5 +1,5 @@
 // "Change an object's behavior when its internal state changes"
-// Lab 4 - State: the Context, the case of one report, followed until it is closed (and the Subject of Observer)
+// Lab 4 - State: the Context, the case of one report, followed until it is closed (also Observer's Subject and Memento's Originator)
 
 #include "Lab4/cases/ReportCase.h"
 
@@ -61,6 +61,17 @@ void ReportCase::unsubscribe(CaseObserver* observer) {
             return;
         }
     }
+}
+
+CaseSnapshot ReportCase::save() const {
+    return CaseSnapshot(state, timesReopened);
+}
+
+void ReportCase::restore(const CaseSnapshot& snapshot) {
+    // Everything comes back, then tell
+    state = snapshot.state;
+    timesReopened = snapshot.timesReopened;
+    notifyObservers();
 }
 
 void ReportCase::notifyObservers() const {

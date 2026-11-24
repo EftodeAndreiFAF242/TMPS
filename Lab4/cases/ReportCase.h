@@ -1,10 +1,12 @@
 // "Change an object's behavior when its internal state changes"
-// Lab 4 - State: the Context, the case of one report, followed until it is closed (and the Subject of Observer)
+// Lab 4 - State: the Context, the case of one report, followed until it is closed (also Observer's Subject and Memento's Originator)
 
 #pragma once
 
 #include <string>
 #include <vector>
+
+#include "Lab4/cases/CaseSnapshot.h"
 
 struct Report;
 class CaseObserver;
@@ -24,6 +26,10 @@ public:
     // Who hears about every change
     void subscribe(CaseObserver* observer);
     void unsubscribe(CaseObserver* observer);
+
+    // Salvează și pune înapoi cazul
+    CaseSnapshot save() const;
+    void restore(const CaseSnapshot& snapshot);
 
     int getReportId() const;
     const std::string& getCategory() const;
