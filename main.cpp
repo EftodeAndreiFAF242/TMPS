@@ -44,6 +44,8 @@
 #include "Lab3/notifications/SignedNotifier.h"
 #include "Lab3/services/CityHall.h"
 
+#include "Lab4/cases/ReportCase.h"
+
 using namespace std;
 
 // Shows a question and returns the line the user types.
@@ -465,6 +467,56 @@ void runLab3Input(ReportStorage& storage) {
     }
 }
 
+// Prints one step of a case
+void showStep(const string& step, const string& refusal, const ReportCase& reportCase) {
+    if (refusal.empty()) {
+        cout << step << ": now " << reportCase.getStatus() << "\n";
+    } else {
+        cout << step << ": refused, " << refusal << "\n";
+    }
+}
+
+// Lab 4: the behavioral patterns demo
+void runLab4(ReportStorage& storage) {
+    cout << "\n=== Laboratory work 4: Behavioral design patterns ===\n";
+
+    // Primăria din laboratorul 3
+    MessageArchive archive;
+    EmailNotifier email;
+    SignedNotifier signedEmail(&email);
+    ArchivedNotifier archivedEmail(&signedEmail, &archive);
+    SystemCalendar calendar(time(nullptr));
+    CityHall cityHall(&storage, &archivedEmail, &calendar);
+    RoadDepartment roads;
+    LightingDepartment lighting;
+    SanitationDepartment sanitation;
+    StormDepartment storm;
+    cityHall.addDepartment("Pothole", &roads);
+    cityHall.addDepartment("Street light", &lighting);
+    cityHall.addDepartment("Garbage", &sanitation);
+    cityHall.addDepartment("Storm damage", &storm);
+
+    // ---- 1. State: the life of a case ----
+    cout << "\n--- 1. State ---\n";
+    cout << "City hall (lab 3) registers a pothole and sends the crew:\n";
+    cityHall.reportProblem("Pothole", "Deep pothole in front of the hospital", "Ismail St. 40", true);
+
+    // Cazul pornește ca Registered
+    ReportCase potholeCase(storage.all().back());
+    cout << "\nThe case of report #" << potholeCase.getReportId() << " starts as: "
+         << potholeCase.getStatus() << "\n";
+    showStep("Finish the work", potholeCase.finishWork(), potholeCase);
+    showStep("Start the work", potholeCase.startWork(), potholeCase);
+    showStep("Start the work again", potholeCase.startWork(), potholeCase);
+    showStep("Finish the work", potholeCase.finishWork(), potholeCase);
+    cout << "The citizen says the hole is still there.\n";
+    showStep("Reopen the case", potholeCase.reopen(), potholeCase);
+    showStep("Finish the work", potholeCase.finishWork(), potholeCase);
+    showStep("Close the case", potholeCase.close(), potholeCase);
+    showStep("Reopen the closed case", potholeCase.reopen(), potholeCase);
+    cout << "The case was reopened " << potholeCase.getTimesReopened() << " time(s).\n";
+}
+
 int main() {
     // The reports of labs 2 and 3 are kept here for the whole run of the program. main() makes
     // the storage once and gives it to the code that needs it, so it does not have to be a singleton.
@@ -479,6 +531,7 @@ int main() {
         cout << "4. Laboratory work 2 - Creational design patterns (type your own report)\n";
         cout << "5. Laboratory work 3 - Structural design patterns (ready example)\n";
         cout << "6. Laboratory work 3 - Structural design patterns (type your own reports)\n";
+        cout << "7. Laboratory work 4 - Behavioral design patterns (ready example)\n";
         cout << "0. Exit\n";
         cout << "Your choice: ";
 
@@ -500,6 +553,8 @@ int main() {
             runLab3(storage);
         } else if (choice == "6") {
             runLab3Input(storage);
+        } else if (choice == "7") {
+            runLab4(storage);
         } else if (choice == "0") {
             break;
         } else {

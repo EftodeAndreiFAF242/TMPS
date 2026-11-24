@@ -2,6 +2,7 @@
 *.exe
 /tmps
 /lab3_tests
+/lab4_tests
 /build/
 
 # Editor settings

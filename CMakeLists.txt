@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Every .cpp file in the lab folders is part of the program, so a new class needs no change here.
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS Lab1/*.cpp Lab2/*.cpp Lab3/*.cpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS Lab1/*.cpp Lab2/*.cpp Lab3/*.cpp Lab4/*.cpp)
 
 add_executable(tmps main.cpp ${SOURCES})
 
@@ -23,3 +23,8 @@ target_include_directories(lab3_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 enable_testing()
 add_test(NAME lab3_tests COMMAND lab3_tests)
+
+# The unit tests of laboratory work 4, built the same way.
+add_executable(lab4_tests tests/Lab4Tests.cpp ${SOURCES})
+target_include_directories(lab4_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lab4_tests COMMAND lab4_tests)
