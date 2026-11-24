@@ -1,10 +1,11 @@
 // "Change an object's behavior when its internal state changes"
-// Lab 4 - State: the Context, the case of one report, followed until it is closed
+// Lab 4 - State: the Context, the case of one report, followed until it is closed (and the Subject of Observer)
 
 #include "Lab4/cases/ReportCase.h"
 
 #include "Lab1/reports/Report.h"
 #include "Lab4/statuses/RegisteredState.h"
+#include "Lab4/updates/CaseObserver.h"
 
 using namespace std;
 
@@ -44,7 +45,29 @@ string ReportCase::moveTo(const ReportState* next, const string& step) {
         return step + ", the case is " + state->name() + ".";
     }
     state = next;
+    notifyObservers();
     return "";
+}
+
+void ReportCase::subscribe(CaseObserver* observer) {
+    observers.push_back(observer);
+}
+
+void ReportCase::unsubscribe(CaseObserver* observer) {
+    // Scoatem doar observatorul cerut
+    for (size_t i = 0; i < observers.size(); i++) {
+        if (observers[i] == observer) {
+            observers.erase(observers.begin() + i);
+            return;
+        }
+    }
+}
+
+void ReportCase::notifyObservers() const {
+    // Everyone subscribed hears it
+    for (CaseObserver* observer : observers) {
+        observer->caseChanged(*this);
+    }
 }
 
 int ReportCase::getReportId() const {

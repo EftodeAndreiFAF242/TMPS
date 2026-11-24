@@ -45,6 +45,8 @@
 #include "Lab3/services/CityHall.h"
 
 #include "Lab4/cases/ReportCase.h"
+#include "Lab4/updates/CaseLog.h"
+#include "Lab4/updates/CitizenUpdates.h"
 
 using namespace std;
 
@@ -515,6 +517,35 @@ void runLab4(ReportStorage& storage) {
     showStep("Close the case", potholeCase.close(), potholeCase);
     showStep("Reopen the closed case", potholeCase.reopen(), potholeCase);
     cout << "The case was reopened " << potholeCase.getTimesReopened() << " time(s).\n";
+
+    // ---- 2. Observer: who hears about a case ----
+    cout << "\n--- 2. Observer ---\n";
+    cout << "City hall registers a broken street light:\n";
+    cityHall.reportProblem("Street light", "The street light near the school is blinking",
+                           "Mihai Viteazul St. 7", false);
+
+    // Cetățeanul și jurnalul ascultă cazul
+    CitizenUpdates citizen(&archivedEmail);
+    CaseLog caseLog(&calendar);
+    ReportCase lightCase(storage.all().back());
+    lightCase.subscribe(&citizen);
+    lightCase.subscribe(&caseLog);
+
+    cout << "\nThe citizen (by e-mail, signed and archived by lab 3) and the city hall log follow report #"
+         << lightCase.getReportId() << ".\n";
+    cout << "Start the work:\n";
+    lightCase.startWork();
+
+    cout << "The citizen asks for no more e-mails and unsubscribes. Finish the work:\n";
+    lightCase.unsubscribe(&citizen);
+    lightCase.finishWork();
+
+    cout << "The citizen subscribes again. Close the case:\n";
+    lightCase.subscribe(&citizen);
+    lightCase.close();
+
+    cout << "A refused step changes nothing, so nobody is told:\n";
+    showStep("Start the work", lightCase.startWork(), lightCase);
 }
 
 int main() {
