@@ -19,6 +19,7 @@ named after the class.
 | 1 | SOLID principles | [Lab1](Lab1/) |
 | 2 | Creational design patterns | [Lab2](Lab2/) |
 | 3 | Structural design patterns | [Lab3](Lab3/) ([report](Lab3/REPORT.md)) |
+| 4 | Behavioral design patterns | [Lab4](Lab4/) ([report](Lab4/REPORT.md)) |
 
 ## How to run
 
@@ -36,12 +37,12 @@ no change in the build.
 Without CMake, from Git Bash:
 
 ```
-g++ -std=c++17 -I. main.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp -o tmps
+g++ -std=c++17 -I. main.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp Lab4/*/*.cpp -o tmps
 ./tmps
 ```
 
 `-I.` tells g++ that include paths start at the project folder, and `Lab1/*/*.cpp
-Lab2/*/*.cpp Lab3/*/*.cpp` compiles the code of every class together with `main.cpp`. Building only
+Lab2/*/*.cpp Lab3/*/*.cpp Lab4/*/*.cpp` compiles the code of every class together with `main.cpp`. Building only
 `main.cpp` is not enough, because the code of the methods is in the other `.cpp` files.
 PowerShell does not expand `Lab1/*/*.cpp`, so in PowerShell use CMake.
 
@@ -54,13 +55,15 @@ Type `0` to exit.
 
 ## How to run the tests
 
-The unit tests of lab 3 are in `tests/Lab3Tests.cpp`. They run with one command:
+The unit tests of lab 3 are in `tests/Lab3Tests.cpp`, and the ones of lab 4 in
+`tests/Lab4Tests.cpp`. Each lab's tests run with one command:
 
 ```
-g++ -std=c++17 -I. tests/Lab3Tests.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp -o lab3_tests && ./lab3_tests
+g++ -std=c++17 -I. tests/Lab3Tests.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp Lab4/*/*.cpp -o lab3_tests && ./lab3_tests
+g++ -std=c++17 -I. tests/Lab4Tests.cpp Lab1/*/*.cpp Lab2/*/*.cpp Lab3/*/*.cpp Lab4/*/*.cpp -o lab4_tests && ./lab4_tests
 ```
 
-With CMake, after the build above: `ctest --test-dir build --output-on-failure`.
+With CMake, after the build above, one command runs both: `ctest --test-dir build --output-on-failure`.
 
 ## Files
 
@@ -89,7 +92,14 @@ Lab3/               laboratory work 3: structural design patterns
   departments/      the department that sends a team: StormDepartment
   validation/       the rule that knows the categories from the departments: KnownCategoryRule
   services/         one entry point for the whole system: CityHall
-tests/              the unit tests: Lab3Tests.cpp
+Lab4/               laboratory work 4: behavioral design patterns
+  README.md         how to build, run and test lab 4
+  REPORT.md         the report
+  cases/            the case of a report and its saved copy: ReportCase, CaseSnapshot
+  statuses/         what a case may do in each status: ReportState, RegisteredState, InProgressState, FixedState, ClosedState
+  updates/          who hears about a change: CaseObserver, CitizenUpdates, CaseLog
+  operator/         the operator's actions and desk: Command, StartWorkCommand, FinishWorkCommand, CloseCaseCommand, ReopenCaseCommand, OperatorDesk
+tests/              the unit tests: Lab3Tests.cpp, Lab4Tests.cpp
 quiz_lab1_2/        a quiz to study for labs 1 and 2
 ```
 
@@ -102,7 +112,7 @@ Every class has its own two files, named after the class:
 - the `.cpp` file has the **code** of those methods.
 
 An interface (a class where every method is `= 0`) and a struct without methods have only
-a `.h` file, because there is no code to put in a `.cpp`: `Rule.h`, `Notifier.h`, `Crew.h`
+a `.h` file, because there is no code to put in a `.cpp`: `Rule.h`, `Notifier.h`, `Crew.h`, `Calendar.h`, `CaseObserver.h`, `Command.h`
 and `WorkOrder.h`.
 
 `#include` copies the whole text of a file into the place where it is written. A header
@@ -118,7 +128,7 @@ Every file follows these rules:
 | Include paths start at the project folder | `#include "Lab1/reports/Report.h"` in any folder, never `"../reports/Report.h"` |
 | A header that uses a class only through a pointer or a reference declares the class instead of including its file | `struct Report;` in `WorkOrderBuilder.h`, and the full `#include` only in `WorkOrderBuilder.cpp` |
 | A class kept inside another one by value needs its full header | `WorkOrderBuilder.h` includes `WorkOrder.h`, because `WorkOrderBuilder` keeps a whole `WorkOrder` inside it |
-| A lab can use the classes of the labs before it, but never the ones after it | `WorkOrderBuilder.cpp` (lab 2) includes `Lab1/reports/Report.h`, and nothing in `Lab1/` or `Lab2/` includes `Lab3/` |
+| A lab can use the classes of the labs before it, but never the ones after it | `WorkOrderBuilder.cpp` (lab 2) includes `Lab1/reports/Report.h`, and nothing in `Lab1/`, `Lab2/` or `Lab3/` includes a later lab |
 | Headers write `std::string` and `std::vector`, and only `.cpp` files have `using namespace std;` | a `using` in a header would reach every file that includes it |
 | The includes come in groups: the file's own header, then the standard library, then the files of the project | `ReportService.cpp` |
 | Every header starts with `#pragma once` | a header included twice is read only once |

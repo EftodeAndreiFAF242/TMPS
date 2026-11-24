@@ -125,7 +125,7 @@ void testForbiddenStepsAreRefused() {
               && closeTooEarly == "the case can't be closed, the case is Registered."
               && reportCase.getStatus() == "Registered");
 
-    // Închidem cazul, apoi încercăm iar
+    // Close it, then try again
     reportCase.startWork();
     reportCase.finishWork();
     reportCase.close();
@@ -179,7 +179,7 @@ void testUnsubscribedObserverIsNotTold() {
     reportCase.subscribe(&citizen);
     reportCase.subscribe(&caseLog);
 
-    // Cetățeanul se dezabonează, apoi revine
+    // The citizen leaves, then comes back
     startCapture();
     reportCase.unsubscribe(&citizen);
     reportCase.startWork();
@@ -232,7 +232,7 @@ void testRestoreGivesBackTheExactState() {
     reportCase.reopen();
     reportCase.finishWork();
 
-    // Fixed, redeschis o dată
+    // Fixed, reopened once
     CaseSnapshot snapshot = reportCase.save();
     reportCase.close();
     bool closedBefore = reportCase.getStatus() == "Closed";
@@ -254,7 +254,7 @@ void testLaterChangesDoNotTouchTheSnapshot() {
     reportCase.restore(snapshot);
     bool firstRestore = reportCase.getStatus() == "Registered" && reportCase.getTimesReopened() == 0;
 
-    // Alte schimbări, aceeași copie
+    // More changes, the same snapshot
     reportCase.startWork();
     reportCase.finishWork();
     reportCase.restore(snapshot);
@@ -392,7 +392,7 @@ void testOneCommandGoesThroughAllFourPatterns() {
     reportCase.subscribe(&caseLog);
     OperatorDesk desk;
 
-    // Comandă, stare, observatori, decoratori
+    // Command, state, observers, decorators
     startCapture();
     desk.run(make_unique<StartWorkCommand>(&reportCase));
     bool told = email.messages.size() == 1
